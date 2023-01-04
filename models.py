@@ -45,6 +45,7 @@ class R_block(nn.Module):
                 padding         = 'same'
             ),
             nn.BatchNorm2d(
+                out_channels,
                 momentum        =  0.8 
             ),
             nn.LeakyReLU(
@@ -58,6 +59,7 @@ class R_block(nn.Module):
                 padding         = 'same'
             ),
             nn.BatchNorm2d(
+                out_channels,
                 momentum        =  0.8 
             )
         )
@@ -89,10 +91,11 @@ class DS_block(nn.Module):
                 in_channels     = in_channels,
                 out_channels    = out_channels,
                 kernel_size     = 3,
-                stride          = 2,
+                stride          = 1, #2
                 padding         = 'same'
             ),
             nn.BatchNorm2d(
+                out_channels,
                 momentum        =  0.8 
             ),
             nn.LeakyReLU(
@@ -127,10 +130,11 @@ class US_block(nn.Module):
                 in_channels     = in_channels,
                 out_channels    = out_channels,
                 kernel_size     = 3,
-                stride          = 2,
-                padding         = 'same'
+                stride          = 1, #2
+                padding         = 1 #'valid'
             ),
             nn.BatchNorm2d(
+                out_channels,
                 momentum        =  0.8 
             ),
             nn.LeakyReLU(
@@ -240,7 +244,7 @@ class SA_UNet_Generator(nn.Module):
             stride          = 1,
             padding         = 'same'
         )
-        self.batchnormFusion = nn.BatchNorm2d(momentum=0.8)
+        self.batchnormFusion = nn.BatchNorm2d(256, momentum=0.8)
         self.leakyReluFusion = nn.LeakyReLU(negative_slope=0.2)
 
         """ Upsampling Block"""
