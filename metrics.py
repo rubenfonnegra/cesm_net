@@ -9,12 +9,8 @@ import matplotlib.pyplot as plt
 import matplotlib; matplotlib.use('Agg')
 
 # Structural Similarity Measure
-from sklearn.metrics import confusion_matrix
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
-
-from skimage.morphology import square, dilation
-
 
 
 def fig2img(fig):

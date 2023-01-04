@@ -137,7 +137,7 @@ def save_configs (args):
 ## THIS FUNCTION MUST BE CHANGED BEFORE COMPUTING METRICS 
 ## 
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
-                               output_dir = None, write_log = False, exp = "DEF"):
+                               output_dir = None, write_log = False):
         #
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
