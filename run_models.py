@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--dataset_name", type=str, default="dce-mri", help="Dataset name")
     parser.add_argument("--format", type=str, default="tif", help="Image format") # "png"
+    parser.add_argument("--workers", type=int, default=10, help="number of workers")
     
     # Training params
     parser.add_argument("--epoch", type=int, default=0, help="Epoch to start training from")

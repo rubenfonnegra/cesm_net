@@ -21,9 +21,10 @@ class ImageDataset(Dataset):
                  batch_size=10, image_size = (512,512), 
                  n_channels = 1,
                  shuffle = True,
-                 format = "png",
+                 format = "png", num_workers = 10, 
                  transforms_=None, name="cesm", **kwargs):
         #
+        super(ImageDataset).__init__()
         'Initialization'
         self.files = [] #inputs  #np.array(inputs)  # list_IDs
         self.targs = [] #outputs #np.array(outputs)   # labels
@@ -33,6 +34,7 @@ class ImageDataset(Dataset):
         self.n_channels = n_channels
         self.shuffle = shuffle
         self.name = name
+        self.num_workers = num_workers
         
         files = natsorted(glob.glob(f"{inputs}/*.{format}") , alg=ns.PATH)
         targs = natsorted(glob.glob(f"{outputs}/*.{format}"), alg=ns.PATH)
@@ -94,7 +96,7 @@ class ValImageDataset(Dataset):
                  batch_size=10, image_size = (512,512), 
                  n_channels = 1,
                  shuffle = True,
-                 format = "png",
+                 format = "png", num_workers = 10, 
                  transforms_=None, name="cesm", **kwargs):
         #
         'Initialization'
@@ -106,6 +108,7 @@ class ValImageDataset(Dataset):
         self.n_channels = n_channels
         self.shuffle = shuffle
         self.name = name
+        self.num_workers = num_workers
         
         files = natsorted(glob.glob(f"{inputs}/*.{format}") , alg=ns.PATH)
         targs = natsorted(glob.glob(f"{outputs}/*.{format}"), alg=ns.PATH)
@@ -168,7 +171,7 @@ class ValImageDataset(Dataset):
 
 class Loader():
     def __init__(self, data_path, proj, 
-                 batch_size=50, dataset_name = "cesm", format = "png",
+                 batch_size=50, dataset_name = "cesm", format = "png", num_workers = 10,
                  img_res=(128, 128), transforms = None, n_channels = 3, **kwargs):
         #
         #data_path = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/Estudios_A2/"
@@ -182,6 +185,7 @@ class Loader():
         self.transforms = transforms
         self.n_channels = n_channels
         self.proj = proj
+        self.num_workers = num_workers
 
 
         self.img_res = img_res
@@ -201,20 +205,20 @@ class Loader():
 
         self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
                                             name=self.dataset_name, format=self.format,
-                                            batch_size=batch_size,
+                                            batch_size=batch_size, num_workers = self.num_workers, 
                                             image_size=img_res, n_channels=n_channels, 
                                             shuffle = True, transforms_ = self.transforms)
         
 
         self.test_generator = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
-                                                batch_size=batch_size,
+                                                batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
         
         self.val_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
-                                                batch_size=batch_size,
+                                                batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
     

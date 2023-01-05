@@ -104,7 +104,7 @@ def run_model(args):
     ]
     
     # Initialize data loader
-    data_loader = Loader ( data_path = args.data_dir, proj = args.projection, format = args.format,
+    data_loader = Loader ( data_path = args.data_dir, proj = args.projection, format = args.format, num_workers = args.workers,
                            batch_size = args.batch_size, img_res=(args.image_size, args.image_size), n_channels = args.channels,
                            transforms = transforms_, dataset_name = args.dataset_name)
     
