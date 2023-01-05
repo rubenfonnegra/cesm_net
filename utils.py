@@ -101,7 +101,7 @@ def save_images (list_images, output_dir, diffmap = None, image_ax = [0,1,2,4,5,
 
     for i, image in zip(image_ax, list_images):
         image = np.squeeze(image).transpose(1,2,0) if image.shape[1] > 1 else np.squeeze(image)
-        axes[i].imshow(np.squeeze(image), cmap = "gray", vmin=-1, vmax=1)
+        axes[i].imshow(np.squeeze(image), cmap = "gray") #, vmin=-1, vmax=1
         axes[i].set_axis_off(); #print(image.min(), image.max())
     
     if diffmap is not None:
@@ -175,7 +175,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                     m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
                     
                     save_images(img_sample, output_dir = output_dir + "imgs/%s.png" % (k), \
-                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(14,6))
+                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(8,6))
             except Exception as e:
                 print (e)
                 continue
@@ -222,7 +222,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
                 img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
                 diffmaps = [diffmap.cpu().numpy()]
                 save_images(img_sample, output_dir = output_dir + "%s.png" % (k), \
-                           diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(14,6))
+                           diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
                 
                 ##---- Metrics -----
                 m_, s_, p_ = pixel_metrics((real_out.data.cpu().numpy()+1)/2, (fake_out.data.cpu().numpy()+1)/2)

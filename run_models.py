@@ -54,7 +54,7 @@ def main():
 
 if __name__ == "__main__":
     #
-    #"""
+    """
     param = sys.argv.append
     
     
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             --exp_name tryout \
             --data_dir Data/cesm_patches/ \
             --image_size 256 --channels 1 \
-            --batch_size 4 \
+            --batch_size 25 \
             --n_epochs 201 \
             --sample_interval 100 --checkpoint_interval 50 \
             --model UNet"
@@ -80,5 +80,5 @@ if __name__ == "__main__":
     
     for arg in args.split(" "): 
         if arg: param(arg)
-    #"""
+    """
     main()

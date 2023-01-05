@@ -91,8 +91,8 @@ class DS_block(nn.Module):
                 in_channels     = in_channels,
                 out_channels    = out_channels,
                 kernel_size     = 3,
-                stride          = 1, #2
-                padding         = 'same'
+                stride          = (2, 2), #2
+                padding         = 1, #'same'
             ),
             nn.BatchNorm2d(
                 out_channels,
@@ -125,25 +125,46 @@ class US_block(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
 
-        self.US_block_layer = nn.Sequential(
-            nn.ConvTranspose2d(
+        # self.US_block_layer = nn.Sequential(
+        #     nn.ConvTranspose2d(
+        #         in_channels     = in_channels,
+        #         out_channels    = out_channels,
+        #         kernel_size     = 3,
+        #         stride          = (2, 2), #2
+        #         padding         = 1 #'valid'
+        #     ),
+        #     nn.BatchNorm2d(
+        #         out_channels,
+        #         momentum        =  0.8 
+        #     ),
+        #     nn.LeakyReLU(
+        #         negative_slope  = 0.2
+        #     )
+        # )
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.convT1 = nn.ConvTranspose2d(
                 in_channels     = in_channels,
                 out_channels    = out_channels,
                 kernel_size     = 3,
-                stride          = 1, #2
-                padding         = 1 #'valid'
-            ),
-            nn.BatchNorm2d(
+                stride          = (2, 2), #2
+                padding         = 1, 
+                #bias = True
+            )
+        
+        self.bn1 = nn.BatchNorm2d(
                 out_channels,
                 momentum        =  0.8 
-            ),
-            nn.LeakyReLU(
+            )
+        
+        self.lrelu = nn.LeakyReLU(
                 negative_slope  = 0.2
             )
-        )
 
         self.convOut = nn.Conv2d(
-            in_channels         = in_channels,
+            in_channels         = out_channels * 2,
             out_channels        = out_channels,
             kernel_size         = 3,
             stride              = 1,
@@ -152,8 +173,12 @@ class US_block(nn.Module):
     
     def forward(self, input_layer, skip_input ):
         
-        out = self.US_block_layer( input_layer )
-        out = torch.cat( (out, skip_input), dim = 0)
+        # out = self.US_block_layer( input_layer )
+        output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
+        out = self.convT1( input_layer, output_size = output_size)
+        out = self.bn1  ( out )
+        out = self.lrelu( out )
+        out = torch.cat( (out, skip_input), dim = 1)
         out = self.convOut( out )
         return out
 

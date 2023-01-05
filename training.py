@@ -8,6 +8,7 @@ import itertools
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
+from torchinfo import summary 
 
 from utils import *
 from models import *
@@ -41,6 +42,7 @@ def run_model(args):
     
     # Initialize generator and discriminator
     generator = SA_UNet_Generator(in_channels = args.channels)
+    summary(generator, input_size=(5, 1, 256,256))
     
     # Choose correct type of D
     if args.generate:
@@ -221,7 +223,7 @@ def run_model(args):
             #             Log Progress
             # ------------------------------------
 
-            if it % 5 == 0:
+            if it % 1 == 0:
                 # Determine approximate time left
                 elapsed_time = time.time() - prev_time
                 hours = elapsed_time // 3600; elapsed_time = elapsed_time - 3600 * hours
@@ -229,7 +231,7 @@ def run_model(args):
 
                 # Print log
                 sys.stdout.write(
-                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f, CA: %f] ETA: %s" # 
+                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
                     % (
                         epoch,
                         args.n_epochs,
