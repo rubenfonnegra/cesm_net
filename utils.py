@@ -183,7 +183,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
         if write_log == True: 
             #""" args.sample_size
             ca = "None"
-            stats_fi = "{0},{2:.6f},{3:.6f},{4:.6f},{5:.6f}".format(rgs.exp_name, \
+            stats_fi = "{0},{2:.6f},{3:.6f},{4:.6f},{5:.6f}".format(args.exp_name, \
                                                 np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
             
             dict = {args.exp_name + "avg_fim" : stats_fi}

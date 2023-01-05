@@ -57,6 +57,9 @@ def run_model(args):
         # Create D
         discriminator = PatchGAN_Discriminator(n_channels = args.channels)
         GAN_loss = nn.MSELoss()
+        # Calculate output of image discriminator (PatchGAN)
+        patch = (1, args.image_size // 2 ** 4, args.image_size // 2 ** 4)
+        #
         to_cuda = [generator, discriminator]
     
     else: 
