@@ -14,7 +14,8 @@ def weights_init_normal(m):
 def weights_init_glorot (m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
         torch.nn.init.xavier_uniform(m.weight)
-        m.bias.data.fill_(0.01)
+        if m.bias is not None: 
+            m.bias.data.fill_(0.01)
 
 
 """
