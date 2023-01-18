@@ -157,7 +157,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
             
-            try:
+            if True: # try:
                 img = dataloader.test_generator[int(l)]
                 real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
                 real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
@@ -176,14 +176,14 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                     
                     save_images(img_sample, output_dir = output_dir + "imgs/%s.png" % (k), \
                                 diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(8,6))
-            except Exception as e:
+            else: #except Exception as e:
                 print (e)
                 continue
         
         if write_log == True: 
             #""" args.sample_size
             ca = "None"
-            stats_fi = "{0},{2:.6f},{3:.6f},{4:.6f},{5:.6f}".format(args.exp_name, \
+            stats_fi = "{0},{1:.6f},{2:.6f},{3:.6f}".format(args.exp_name, \
                                                 np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
             
             dict = {args.exp_name + "avg_fim" : stats_fi}
@@ -235,7 +235,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
         if write_log == True: 
             #"""
             stats_fi = "{0:.4f}, {1:.4f}, {2:.4f}".format(np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
-            dict = {args.exp_name + "avg_fim" : stats_fi }
+            dict = {args.exp_name + "," : stats_fi }
             w = csv.writer(open("Results/{0}_stats.csv".format(args.exp_name), "a"))
             for key, val in dict.items(): w.writerow([key, val]) #"""
             print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))

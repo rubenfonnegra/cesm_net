@@ -30,7 +30,7 @@ def mae(im_true, im_pred):
 
 def pixel_metrics (im_true, im_pred):
     #
-    p = psnr(np.squeeze(im_true), np.squeeze(im_pred))
+    p = psnr(np.squeeze(im_true), np.squeeze(im_pred), data_range=1)
     s = ssim(np.squeeze(im_true), np.squeeze(im_pred))
     m = mae (np.squeeze(im_true), np.squeeze(im_pred))
     return m, s, p

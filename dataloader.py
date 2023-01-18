@@ -119,7 +119,11 @@ class ValImageDataset(Dataset):
         for targ_ in targs: 
             if self.proj in targ_: self.targs.append(targ_)
         
-        self.transforms = T.Compose(transforms_)
+        # self.transforms = T.Compose(transforms_)
+        self.transforms = T.Compose([
+                                T.Resize((256, 256), Image.BICUBIC),
+                                T.ToTensor()
+                            ])
         
 
     
@@ -194,10 +198,10 @@ class Loader():
             # (train_i, train_o, train_meta), (test_i, test_o, test_meta), (val_i, val_o, val_meta) = self.get_duke_metadata()
             train_i = data_path + "/LE/train/"
             train_o = data_path + "/RC/train/"
-            test_i  = data_path + "/LE/train/"
-            test_o  = data_path + "/RC/train/"
-            val_i   = data_path + "/LE/train/"
-            val_o   = data_path + "/RC/train/"
+            test_i  = data_path + "/LE/test/"
+            test_o  = data_path + "/RC/test/"
+            val_i   = data_path + "/LE/test/"
+            val_o   = data_path + "/RC/test/"
         
         else: 
             raise NotImplementedError (dataset_name, "Database not implemented")

@@ -49,3 +49,78 @@ python run_models.py --gpus 0 \
 
 ## Validation
 
+
+### UNet 
+
+```
+source /media/labmirp/Datos/venvs/cesm_env/bin/activate 
+
+python run_models.py --gpus 0 \
+            --generate \
+            --epoch 200 \
+            --exp_name unet_cs \
+            --sample_size 20 \
+            --dataset_name cesm \
+            --projection MLO \
+            --data_dir Data/cesm_patches/ \
+            --image_size 256 --channels 1 
+```
+
+```
+source /media/labmirp/Datos/venvs/cesm_env/bin/activate 
+
+python run_models.py --gpus 0 \
+            --generate \
+            --epoch 200 \
+            --exp_name unet_cs_CC \
+            --sample_size 20 \
+            --dataset_name cesm \
+            --projection CC \
+            --data_dir Data/cesm_patches/ \
+            --image_size 256 --channels 1 
+```
+
+
+### GAN 
+
+```
+source /media/labmirp/Datos/venvs/cesm_env/bin/activate 
+
+python run_models.py --gpus 0 \
+            --generate \
+            --epoch 200 \
+            --exp_name gan_cs \
+            --sample_size 20 \
+            --dataset_name cesm \
+            --projection MLO \
+            --data_dir Data/cesm_patches/ \
+            --image_size 256 --channels 1 
+```
+
+```
+source /media/labmirp/Datos/venvs/cesm_env/bin/activate 
+
+python run_models.py --gpus 0 \
+            --generate \
+            --epoch 200 \
+            --exp_name gan_cs_CC \
+            --sample_size 20 \
+            --dataset_name cesm \
+            --projection CC \
+            --data_dir Data/cesm_patches/ \
+            --image_size 256 --channels 1 
+```
+
+```
+source /media/labmirp/Datos/venvs/cesm_env/bin/activate 
+
+python run_models.py --gpus 0 \
+            --generate \
+            --epoch 200 \
+            --exp_name gan_cs_v2 \
+            --sample_size 20 \
+            --dataset_name cesm \
+            --projection MLO \
+            --data_dir Data/cesm_patches/ \
+            --image_size 256 --channels 1 
+```
