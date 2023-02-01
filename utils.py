@@ -175,7 +175,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                     m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
                     
                     save_images(img_sample, output_dir = output_dir + "imgs/%s.png" % (k), \
-                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(8,6))
+                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,6))
             else: #except Exception as e:
                 print (e)
                 continue
