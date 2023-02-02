@@ -51,7 +51,8 @@ def run_model(args):
         to_cuda = [generator]
     
     elif args.model == "UNet":
-        to_cuda = [generator] 
+        to_cuda = [generator]
+        discriminator = None 
 
     elif args.model == "GAN":
         # Create D
