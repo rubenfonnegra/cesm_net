@@ -114,10 +114,18 @@ def run_model(args):
     # In case of validation option. Otherwise, move to train
     if args.generate: 
         #
-        print ("\n [*] -> Generating images.... \n")
+        print ("\n [*] -> Generating test images.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                    shuffled = False, write_log = True, \
-                                   output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch))
+                                   output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
+                                   val=False)
+        print ("\n [✓] -> Done! \n\n")
+        
+        print ("\n [*] -> Generating validation images.... \n")
+        generate_images_with_stats(args, data_loader, generator, args.epoch, \
+                                   shuffled = False, write_log = True, \
+                                   output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
+                                   val=True)
         print ("\n [✓] -> Done! \n\n")
         exit()
     

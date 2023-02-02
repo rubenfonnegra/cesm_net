@@ -137,7 +137,9 @@ def save_configs (args):
 ## THIS FUNCTION MUST BE CHANGED BEFORE COMPUTING METRICS 
 ## 
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
-                               output_dir = None, write_log = False):
+                               output_dir = None, write_log = False, val = True):
+    
+        dataloader_ = dataloader.val_generator if (val) else dataloader.test_generator
         #
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
@@ -148,17 +150,18 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
             output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
 
         if shuffled: 
-            lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+            lucky = np.random.randint(0, len(dataloader_), args.sample_size)
         else: 
             lucky = np.arange(0, args.sample_size)
         
-        os.makedirs(output_dir+"imgs/", exist_ok = True)
+        out_dir = output_dir+"imgs_completa/" if (val) else output_dir+"imgs_parches/"
+        os.makedirs(out_dir, exist_ok = True)
         m_fi, s_fi, p_fi = [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
             
             if True: # try:
-                img = dataloader.test_generator[int(l)]
+                img = dataloader_[int(l)]
                 real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
                 real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
@@ -174,8 +177,8 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                     m_, s_, p_ = pixel_metrics((real_out.data.cpu().numpy()+1)/2, (fake_out.data.cpu().numpy()+1)/2)
                     m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
                     
-                    save_images(img_sample, output_dir = output_dir + "imgs/%s.png" % (k), \
-                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,6))
+                    save_images(img_sample, output_dir = out_dir + "%s.png" % (k), \
+                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
             else: #except Exception as e:
                 print (e)
                 continue
@@ -187,7 +190,11 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                                                 np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
             
             dict = {args.exp_name + "avg_fim" : stats_fi}
-            w = csv.writer(open("Results/{0}_stats.csv".format(args.exp_name), "a"))
+            if val:
+                w = csv.writer(open("Results/{0}_stats_val.csv".format(args.exp_name), "a"))
+            else:
+                w = csv.writer(open("Results/{0}_stats_test.csv".format(args.exp_name), "a"))
+                
             for key, val in dict.items(): w.writerow([key, val]) #"""
             print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
             
@@ -203,7 +210,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
             output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
 
         if shuffled: 
-            lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+            lucky = np.random.randint(0, len(dataloader.val_generator), args.sample_size)
         else: 
             lucky = np.arange(0, args.sample_size)
         
@@ -211,7 +218,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
         m_fi, s_fi, p_fi= [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
-            img = dataloader.test_generator[int(l)]
+            img = dataloader.val_generator[int(l)]
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 

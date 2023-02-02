@@ -200,8 +200,8 @@ class Loader():
             train_o = data_path + "/RC/train/"
             test_i  = data_path + "/LE/test/"
             test_o  = data_path + "/RC/test/"
-            val_i   = data_path + "/LE/test/"
-            val_o   = data_path + "/RC/test/"
+            val_i   = data_path + "/LE/val/"
+            val_o   = data_path + "/RC/val/"
         
         else: 
             raise NotImplementedError (dataset_name, "Database not implemented")
@@ -214,7 +214,7 @@ class Loader():
                                             shuffle = True, transforms_ = self.transforms)
         
 
-        self.test_generator = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+        self.test_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
