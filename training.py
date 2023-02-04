@@ -103,7 +103,7 @@ def run_model(args):
     transforms_ = [
         # transforms.Resize((256, 256), Image.BICUBIC),
         transforms.ToTensor(),
-        # min_max_scaling(range = [-1,1]),
+        #min_max_scaling(range = [0,1]),
         #transforms.RandomHorizontalFlip(p=0.5),  ##Data augmentation
     ]
     

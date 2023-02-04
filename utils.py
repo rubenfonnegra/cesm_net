@@ -101,7 +101,7 @@ def save_images (list_images, output_dir, diffmap = None, image_ax = [0,1,2,4,5,
 
     for i, image in zip(image_ax, list_images):
         image = np.squeeze(image).transpose(1,2,0) if image.shape[1] > 1 else np.squeeze(image)
-        axes[i].imshow(np.squeeze(image), cmap = "gray") #, vmin=-1, vmax=1
+        axes[i].imshow(np.squeeze(image), cmap = "gray", vmin=0, vmax=1) #, vmin=-1, vmax=1
         axes[i].set_axis_off(); #print(image.min(), image.max())
     
     if diffmap is not None:

@@ -49,9 +49,12 @@ class R_block(nn.Module):
                 out_channels,
                 momentum        =  0.8 
             ),
-            nn.LeakyReLU(
-                negative_slope  = 0.2
-            ),
+            
+            # nn.LeakyReLU(
+            #     negative_slope  = 0.2
+            # ),
+            nn.ReLU(),
+            
             nn.Conv2d(
                 in_channels     = in_channels,
                 out_channels    = out_channels,
@@ -99,9 +102,10 @@ class DS_block(nn.Module):
                 out_channels,
                 momentum        =  0.8 
             ),
-            nn.LeakyReLU(
-                negative_slope  = 0.2
-            )
+            # nn.LeakyReLU(
+            #     negative_slope  = 0.2
+            # )
+            nn.ReLU()
         )
     
     def forward(self, input_layer ):
@@ -160,9 +164,10 @@ class US_block(nn.Module):
                 momentum        =  0.8 
             )
         
-        self.lrelu = nn.LeakyReLU(
-                negative_slope  = 0.2
-            )
+        # self.lrelu = nn.LeakyReLU(
+        #         negative_slope  = 0.2
+        #     )
+        self.relu = nn.ReLU()
 
         self.convOut = nn.Conv2d(
             in_channels         = out_channels * 2,
@@ -178,7 +183,8 @@ class US_block(nn.Module):
         output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
         out = self.convT1( input_layer, output_size = output_size)
         out = self.bn1  ( out )
-        out = self.lrelu( out )
+        #out = self.lrelu( out )
+        out = self.relu( out )
         out = torch.cat( (out, skip_input), dim = 1)
         out = self.convOut( out )
         return out
@@ -271,7 +277,8 @@ class SA_UNet_Generator(nn.Module):
             padding         = 'same'
         )
         self.batchnormFusion = nn.BatchNorm2d(256, momentum=0.8)
-        self.leakyReluFusion = nn.LeakyReLU(negative_slope=0.2)
+        #self.leakyReluFusion = nn.LeakyReLU(negative_slope=0.2)
+        self.reluFusion = nn.ReLU()
 
         """ Upsampling Block"""
         self.US1 = US_block( 256, 256 )
@@ -291,6 +298,8 @@ class SA_UNet_Generator(nn.Module):
             stride              = 1,
             padding             = 'same'
         )
+        
+        self.actOut = nn.Sigmoid()
     
     def forward(self, img_input):
         
@@ -309,7 +318,8 @@ class SA_UNet_Generator(nn.Module):
         """ Fusion Block Forward """
         out = self.convFusion(outDS)
         out = self.batchnormFusion(out)
-        out = self.leakyReluFusion(out)
+        #out = self.leakyReluFusion(out)
+        out = self.reluFusion(out)
 
         """ Upsampling Block Forward """
         out = self.US1( out, outRB4 )
@@ -323,6 +333,7 @@ class SA_UNet_Generator(nn.Module):
 
         """ Output Convolution """
         out = self.convOut(out)
+        out = self.actOut(out)
 
         return out
 
