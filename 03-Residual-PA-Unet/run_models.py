@@ -22,7 +22,7 @@ def main():
 
     # Custom configs
     ### Main adv loss
-    parser.add_argument("--model", help="Model to use.", default = "UNet", choices=["UNet", "GAN"])
+    parser.add_argument("--model", help="Model to use.", default = "UNet", choices=["UNet", "GAN", "Residual-PA-Unet"])
 
     # Dataset params
     parser.add_argument("--projection", type=str, default="CC", help="Projection in which mammograms were taken")
@@ -43,11 +43,15 @@ def main():
     parser.add_argument("--sample_size", type=int, default=10, help="interval of sampled images to generate")
     parser.add_argument("--sample_interval", type=int, default=10, help="interval between sampling of images from generators")
     parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between model checkpoints. Default = %(default)s (no save)")
+    parser.add_argument("--use_wandb", type=bool, default=False, help="if is False use tensorboard, if is True use weigths and biases")
 
 
     # Initial configs
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+    
+    if args.use_wandb:
+        wandb.init(project="master-degree-thesis", entity="kevin-osorno-castillo")
     
     setup_configs(args)
     run_model(args)

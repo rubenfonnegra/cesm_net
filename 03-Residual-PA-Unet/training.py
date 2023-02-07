@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
-from torchinfo import summary 
+from torchinfo import summary
 
 from utils import *
 from models import *

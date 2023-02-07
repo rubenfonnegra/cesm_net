@@ -12,6 +12,7 @@ from tqdm import tqdm
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib; matplotlib.use('Agg')
+import wandb
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -125,12 +126,15 @@ def save_images (list_images, output_dir, diffmap = None, image_ax = [0,1,2,4,5,
 ## 
 def save_configs (args):
     #
-    with Path("%s/%s" %(args.result_dir, "config.txt")).open("a") as f:
+    with Path("%s/%s" %(args.result_dir, "config.txt")).open("a") as f:        
         f.write("\n##############\n   Settings\n##############\n\n")
         args_dict = vars(args)
         for key in args_dict.keys():
             f.write("{0}: {1}, \n".format(json.dumps(key), json.dumps(args_dict[key])))
         f.write("\n")
+        
+        # Send experiment config to WandB
+        wandb.config = args_dict
 
 ##
 ## Image and stats saving in generation mode
