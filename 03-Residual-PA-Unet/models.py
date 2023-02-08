@@ -94,13 +94,13 @@ class Residual_PA_UNet_Generator(nn.Module):
 
         """ Upsampling Block Forward """
         out = self.US1( out, outRPA4 )
-        out = self.RPA5( out )
+        out,_ = self.RPA5( out )
         out = self.US2( out, outRPA3 )
-        out = self.RPA6( out )
+        out,_ = self.RPA6( out )
         out = self.US3(out, outRPA2 )
-        out = self.RPA7(out)
+        out,_ = self.RPA7(out)
         out = self.US4( out, outRPA1 )
-        out = self.RPA8(out)
+        out,_ = self.RPA8(out)
 
         """ Output Convolution """
         out = self.convOut(out)

@@ -42,7 +42,7 @@ def run_model(args):
     
     # Initialize generator and discriminator
     generator = Residual_PA_UNet_Generator(in_channels = args.channels)
-    summary(generator, input_size=(5, 1, 256,256))
+    #summary(generator, input_size=(5, 1, 256,256))
     
     # Choose correct type of D
     if args.generate:
@@ -63,9 +63,7 @@ def run_model(args):
     to_cuda.append (pixelwise_loss)
 
     # Move everything to gpu
-    if args.cuda:
-        for model in to_cuda:
-            model.cuda()
+    generator.cuda()
 
     # Load model in case of training. Otherwise, random init
     if args.epoch != 0:

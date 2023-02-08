@@ -44,7 +44,7 @@ class PixelAttention(nn.Module):
         
         y = self.conv2D( input_features_maps )
         attn_maps = self.sigmoid( y )
-        out = torch.mul( input_features_maps, y)
+        out = torch.mul( input_features_maps, attn_maps)
         return out, attn_maps
 
 """
@@ -74,11 +74,13 @@ class Residual_PA_block_1(nn.Module):
                 padding         = 'same'
             )
         )
+        
+        self.pixelAttention = PixelAttention(out_channels)
     
     def forward(self, input_layer ):
 
         out = self.R_block_layer( input_layer )
-        attn = PixelAttention(out)
+        out, attn = self.pixelAttention(out)
         out = torch.add(attn, input_layer)
         return out, attn
 
