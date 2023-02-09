@@ -121,8 +121,7 @@ def extract_patches_without_background (images, n_patches = 25, patch_size = 256
     
     #while (len(patches_im1) < n_patches_without_bg) and i < 200:
     while (
-            (len(patches_im1) < n_patches) or 
-            (i<2000)
+            (len(patches_im1) < n_patches)
         ):
         #
         i += 1
@@ -161,11 +160,11 @@ def save_images(patches, name, output_path, subset, side, proj):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--b_id", type=str)
-parser.add_argument("--pr_id", type=str)
+parser.add_argument("--b_id", type=str, default="L")
+parser.add_argument("--pr_id", type=str, default="CC")
 parser.add_argument("--porcent_bg", type=int)
 parser.add_argument("--porcent_borde", type=int)
-parser.add_argument("--name", type=str)
+parser.add_argument("--name", type=str, default="data_without_background")
 
 args = parser.parse_args()
 

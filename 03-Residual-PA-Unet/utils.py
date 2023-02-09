@@ -214,7 +214,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
             output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
 
         if shuffled: 
-            lucky = np.random.randint(0, len(dataloader.val_generator), args.sample_size)
+            lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
         else: 
             lucky = np.arange(0, args.sample_size)
         
@@ -222,7 +222,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
         m_fi, s_fi, p_fi= [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
-            img = dataloader.val_generator[int(l)]
+            img = dataloader.test_generator[int(l)]
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
