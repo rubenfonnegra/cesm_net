@@ -207,7 +207,7 @@ for i in tqdm(meta_.index, ncols = 100):
     dcm1 = scaler(dcm1, range_out = [0,1])
     dcm2 = scaler(dcm2, range_out = [0,1])
     
-    patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True, porcent_bg=porcent_bg, porcent_borde= porcent_borde)
+    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
     
     _, axes = plt.subplots(1,2, figsize=(12, 8))
     axes[0].imshow(im_1_c, cmap="gray")
@@ -250,7 +250,7 @@ for i in tqdm(meta_.index, ncols = 100):
     dcm1 = scaler(dcm1, range_out = [0,1])
     dcm2 = scaler(dcm2, range_out = [0,1])
     
-    patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 20, patch_size = 256, return_patch_locs=True, porcent_bg=porcent_bg, porcent_borde= porcent_borde)
+    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 20, patch_size = 256, return_patch_locs=True)
     
     _, axes = plt.subplots(1,2, figsize=(12, 8))
     axes[0].imshow(im_1_c, cmap="gray")
