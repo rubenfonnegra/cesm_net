@@ -101,7 +101,50 @@ def extract_patches (images, n_patches = 25, patch_size = 256, return_patch_locs
     patches_im1, patches_im2 = np.array(patches_im1), np.array(patches_im2)
     
     if not return_patch_locs: return patches_im1, patches_im2
-    else: return patches_im1, patches_im2, im_1_c, im_2_c 
+    else: return patches_im1, patches_im2, im_1_c, im_2_c
+
+def extract_patches_without_background (images, n_patches = 25, patch_size = 256, return_patch_locs=False):
+    
+    # n_patches = 25
+    # patch_size = 256
+    
+    im_1, im_2 = images
+    locs = np.array(np.where(im_1 > 0)).T
+    
+    """ Creacion de lista en donde se guardan los parches que cumplan con las condiciones """
+    patches_im1, patches_im2                = [], []
+    
+    im_1_c = im_1.copy() 
+    im_2_c = im_2.copy()
+    np.random.seed(0)
+    i = 0
+    
+    #while (len(patches_im1) < n_patches_without_bg) and i < 200:
+    while (
+            (len(patches_im1) < n_patches) or 
+            (i<2000)
+        ):
+        #
+        i += 1
+        lucky = np.random.randint(0, len(locs))
+        patch_le = im_1[locs[lucky][0]:locs[lucky][0]+patch_size, locs[lucky][1]:locs[lucky][1]+patch_size]
+        patch_rc = im_2[locs[lucky][0]:locs[lucky][0]+patch_size, locs[lucky][1]:locs[lucky][1]+patch_size]
+        
+        porcent_zero = np.mean(patch_rc == 0)
+        
+        if (patch_le.shape != (patch_size, patch_size)) or (patch_rc.shape != (patch_size, patch_size)):
+            continue
+        
+        if ( porcent_zero <= 0.15 ):
+            im_1_c = cv2.rectangle(im_1_c, (locs[lucky][1], locs[lucky][0]), (locs[lucky][1]+patch_size, locs[lucky][0]+patch_size), (1), (10))
+            im_2_c = cv2.rectangle(im_2_c, (locs[lucky][1], locs[lucky][0]), (locs[lucky][1]+patch_size, locs[lucky][0]+patch_size), (1), (10))
+            patches_im1.append(patch_le)
+            patches_im2.append(patch_rc)
+                
+    patches_im1, patches_im2 = np.array(patches_im1), np.array(patches_im2)
+    
+    if not return_patch_locs: return patches_im1, patches_im2
+    else: return patches_im1, patches_im2, im_1_c, im_2_c
 
 def save_images(patches, name, output_path, subset, side, proj):
     #
