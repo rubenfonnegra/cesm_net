@@ -37,7 +37,11 @@ def setup_configs(args):
 def run_model(args): 
     
     # Initialize generator and discriminator
-    generator = Residual_PA_UNet_Generator(in_channels = args.channels)
+    if(args.model == "UNet"):
+        generator = SA_UNet_Generator(in_channels = args.channels)
+    elif(args.model == "Residual-PA-Unet"):
+        generator = Residual_PA_UNet_Generator(in_channels= args.channels)
+    
     summary(generator, input_size=(5, 1, 256,256))
     
     # Choose correct type of D
@@ -85,11 +89,11 @@ def run_model(args):
                
         if   args.weigth_init == "normal":
             generator.apply(weights_init_normal)
-            if args.model != "UNet": 
+            if args.model == "GAN": 
                 discriminator.apply(weights_init_normal)
         elif args.weigth_init == "glorot":
             generator.apply(weights_init_glorot)
-            if args.model != "UNet": 
+            if args.model == "GAN": 
                 discriminator.apply(weights_init_glorot)
     
 
@@ -101,31 +105,32 @@ def run_model(args):
     # Initialize data loader
     data_loader = Loader ( data_path = args.data_dir, proj = args.projection, format = args.format, num_workers = args.workers,
                            batch_size = args.batch_size, img_res=(args.image_size, args.image_size), n_channels = args.channels,
-                           transforms = transforms_, dataset_name = args.dataset_name)
+                           transforms = transforms_, dataset_name = args.dataset_name, img_complete = args.img_complete)
     
     # In case of validation option. Otherwise, move to train
     if args.generate: 
         #
         """ Not used in image complete exp """
-        # print ("\n [*] -> Generating test patches.... \n")
-        # generate_images_with_stats(args, data_loader, generator, args.epoch, \
-        #                            shuffled = False, write_log = True, \
-        #                            output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
-        #                            img_complete=False)
-        # print ("\n [✓] -> Done! \n\n")
+        if(not(args.img_complete)):
+            print ("\n [*] -> Generating test patches.... \n")
+            generate_images_with_stats(args, data_loader, generator, args.epoch, \
+                                    shuffled = False, write_log = True, \
+                                    output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
+                                    img_complete=False)
+            print ("\n [✓] -> Done! \n\n")
         
         print ("\n [*] -> Generating test images complete.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                    shuffled = False, write_log = True, \
                                    output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
-                                   val=True)
+                                   img_complete=True)
         print ("\n [✓] -> Done! \n\n")
         exit()
     
 
     # Optimizers
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
-    if args.model != "UNet": 
+    if args.model == "GAN": 
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 
 
@@ -176,7 +181,7 @@ def run_model(args):
             # GAN loss 
             fake_out, _ = generator(real_in)
 
-            if args.model == "UNet":
+            if args.model != "GAN":
                 loss_GAN = torch.tensor(0)
             
             elif args.model == "GAN":
@@ -198,7 +203,7 @@ def run_model(args):
             #          Train Discriminator
             # ------------------------------------
 
-            if args.model == "UNet":
+            if args.model != "GAN":
                 loss_D = torch.tensor(0)
             
             if args.model == "GAN":
@@ -291,7 +296,7 @@ def run_model(args):
             # Save model checkpoints
             os.makedirs("%s/saved_models/" % (args.result_dir), exist_ok = True)
             torch.save(generator.state_dict(), "{0}/saved_models/G_chkp_{1:03d}.pth".format(args.result_dir, epoch))
-            if args.model != "UNet": 
+            if args.model == "GAN": 
                 torch.save(discriminator.state_dict(), "{0}/saved_models/D_chkp_{1:03d}.pth".format(args.result_dir, epoch))
 
         # If at sample interval save image

@@ -4,6 +4,54 @@ import torch.nn as nn
 """
 ---------- Implementation of PixelAttention2D Block -----------
 
+Based in visual-attention-tf: https://github.com/vinayak19th/Visual_attention_tf/blob/main/build/lib/visual_attention/pixel_attention.py
+
+class PixelAttention2D(tf.keras.layers.Layer):
+
+    def __init__(self, nf, **kwargs):
+        super().__init__(**kwargs)
+        self.nf = nf
+        self.conv1 = Conv2D(filters=nf, kernel_size=1)
+
+    @tf.function
+    def call(self, x):
+        y = self.conv1(x)
+        self.sig = tf.keras.activations.sigmoid(y)
+        out = tf.math.multiply(x, y)
+        out = self.conv1(out)
+        return out
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"Att_filters": self.nf})
+        return config
+
+"""
+class PixelAttention2D(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.conv2D = nn.Conv2d(
+                        in_channels     = in_channels,
+                        out_channels    = out_channels,
+                        kernel_size     = 1,
+                        stride          = 1,
+                        padding         = 'valid'
+                    )
+        self.sigmoid = nn.Sigmoid()
+    
+    def forward(self, input_layer ):
+        
+        y = self.conv2D( input_layer )
+        y = self.sigmoid( y )
+        out = torch.mul( input_layer, y)
+        out = self.conv2D( out )
+        return out
+
+"""
+---------- Implementation of PixelAttention2D Block -----------
+
 Based in PAN repository: https://github.com/zhaohengyuan1/PAN/blob/master/codes/models/archs/PAN_arch.py
 
 class PA(nn.Module):
@@ -81,7 +129,7 @@ class Residual_PA_block_1(nn.Module):
 
         out = self.R_block_layer( input_layer )
         out, attn = self.pixelAttention(out)
-        out = torch.add(attn, input_layer)
+        out = torch.add(out, input_layer)
         return out, attn
 
 """
@@ -120,13 +168,68 @@ class Residual_PA_block_2(nn.Module):
                 momentum        =  0.8 
             )
         )
+
+        self.pixelAttention = PixelAttention(out_channels)
     
     def forward(self, input_layer ):
 
-        out     = self.R_block_layer(input_layer)
-        attn    = PixelAttention( out )
-        out     = torch.add(attn, input_layer)
+        out             = self.R_block_layer(input_layer)
+        out, attn       = self.pixelAttention( out )
+        out             = torch.add(out, input_layer)
         return out, attn
+
+"""
+---------- Implementation of Residual Block -----------
+
+def R_block(layer_input, filters):
+
+    d = Conv2D(filters, kernel_size=3, strides=1, padding='same')(layer_input)
+    d = BatchNormalization(momentum=0.8)(d)
+    d = LeakyReLU(alpha=0.2)(d)
+    d = Conv2D(filters, kernel_size=3, strides=1, padding='same')(d)
+    d = BatchNormalization(momentum=0.8)(d)
+    d = tf.add(d, layer_input)
+
+    return d
+"""
+class R_block(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.R_block_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels     = in_channels,
+                out_channels    = out_channels,
+                kernel_size     = 3,
+                stride          = 1,
+                padding         = 'same'
+            ),
+            nn.BatchNorm2d(
+                out_channels,
+                momentum        =  0.8 
+            ),
+
+            nn.ReLU(),
+
+            nn.Conv2d(
+                in_channels     = in_channels,
+                out_channels    = out_channels,
+                kernel_size     = 3,
+                stride          = 1,
+                padding         = 'same'
+            ),
+            nn.BatchNorm2d(
+                out_channels,
+                momentum        =  0.8 
+            )
+        )
+    
+    def forward(self, input_layer ):
+
+        out = self.R_block_layer(input_layer)
+        out = torch.add(out, input_layer)
+        return out
 
 """
 ---------- Implementation of UpSampling Block -----------

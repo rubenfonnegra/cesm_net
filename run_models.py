@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--data_dir", type = str, default = "/media/mirplab/TB2/Experiments-Mammography/01_Data/borde_bg_30/", help="Data dir path")
     parser.add_argument("--result_dir", type = str, default = "Results/", help = "Results path. Default = %(default)s")
     parser.add_argument("--generate", help="Image generation mode (default: False)", default=None, action="store_true")
+    parser.add_argument("--img_complete", help="Image complete or patches exp?", default=None, action="store_true")
     # parser.add_argument("--ce_metrics", help="CE metrics computation mode (default: False)", default=None, action="store_true")
 
     # Custom configs
@@ -44,7 +45,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=50, help="interval of sampled images to generate")
     parser.add_argument("--sample_interval", type=int, default=10, help="interval between sampling of images from generators")
     parser.add_argument("--checkpoint_interval", type=int, default=50, help="interval between model checkpoints. Default = %(default)s (no save)")
-    parser.add_argument("--use_wandb", type=bool, default=True, help="if is False use tensorboard, if is True use weigths and biases")
+    parser.add_argument("--use_wandb", type=bool, default=False, help="if is False use tensorboard, if is True use weigths and biases")
     parser.add_argument("--lambda_pixel", type=int, default=100, help="The weight of pixel loss, default = 100")
 
 

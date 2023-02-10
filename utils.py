@@ -199,10 +199,14 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                                                 np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
             
             dict = {args.exp_name + "avg_fim" : stats_fi}
+
+            output_dir = "%s/metrics/" % (args.result_dir)
+            os.makedirs(output_dir, exist_ok=True)
+            
             if img_complete:
-                w = csv.writer(open("Results/{0}_stats_img_complete.csv".format(args.exp_name), "a"))
+                w = csv.writer(open("{0}/{1}_stats_img_complete.csv".format(output_dir, args.exp_name), "a"))
             else:
-                w = csv.writer(open("Results/{0}_stats_patch.csv".format(args.exp_name), "a"))
+                w = csv.writer(open("{0}/{1}_stats_patch.csv".format(output_dir, args.exp_name), "a"))
                 
             for key, val in dict.items(): w.writerow([key, val]) #"""
             print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))

@@ -122,15 +122,17 @@ class ValImageDataset(Dataset):
         # self.transforms = T.Compose(transforms_)
         self.transforms = T.Compose([
                                 T.Resize((256, 256), Image.BICUBIC),
-                                T.ToTensor()
+                                T.ToTensor(),
                             ])
         
 
     
     def __random_shuffle__(self): 
-        #
-        self.files, self.targs, self.metadata = shuffle(self.files, self.targs, self.metadata )
-        self.metadata.index = np.arange(len(self.files)) 
+        
+        """ For image complete exp """
+        # self.files, self.targs, self.metadata = shuffle(self.files, self.targs, self.metadata )
+        # self.metadata.index = np.arange(len(self.files))
+        self.files, self.targs = shuffle(self.files, self.targs)
     
 
     def __getitem__(self, index):
@@ -176,7 +178,7 @@ class ValImageDataset(Dataset):
 class Loader():
     def __init__(self, data_path, proj, 
                  batch_size=50, dataset_name = "cesm", format = "png", num_workers = 10,
-                 img_res=(128, 128), transforms = None, n_channels = 3, **kwargs):
+                 img_res=(128, 128), transforms = None, n_channels = 3, img_complete = True, **kwargs):
         #
         #data_path = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/Estudios_A2/"
         #data_path = "/media/ruben-kubuntu/Datos/breast_data/"
@@ -190,6 +192,7 @@ class Loader():
         self.n_channels = n_channels
         self.proj = proj
         self.num_workers = num_workers
+        self.img_complete = img_complete
 
 
         self.img_res = img_res
@@ -206,26 +209,37 @@ class Loader():
         else: 
             raise NotImplementedError (dataset_name, "Database not implemented")
         
-
-        self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
-                                            name=self.dataset_name, format=self.format,
-                                            batch_size=batch_size, num_workers = self.num_workers, 
-                                            image_size=img_res, n_channels=n_channels, 
-                                            shuffle = True, transforms_ = self.transforms)
-        
-
-        self.test_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+        if self.img_complete:
+            self.train_generator = ValImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
-        
-        self.val_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
+                        
+            self.test_img_complete_generator  = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+                                                    name=self.dataset_name, format=self.format,
+                                                    batch_size=batch_size, num_workers = self.num_workers, 
+                                                    image_size=img_res, n_channels=n_channels, 
+                                                    shuffle = True, transforms_ = self.transforms)
+
+        else:
+            self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
-    
+
+            self.test_patch_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+                                                    name=self.dataset_name, format=self.format,
+                                                    batch_size=batch_size, num_workers = self.num_workers, 
+                                                    image_size=img_res, n_channels=n_channels, 
+                                                    shuffle = True, transforms_ = self.transforms)
+            
+            self.test_img_complete_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
+                                                    name=self.dataset_name, format=self.format,
+                                                    batch_size=batch_size, num_workers = self.num_workers, 
+                                                    image_size=img_res, n_channels=n_channels, 
+                                                    shuffle = True, transforms_ = self.transforms)
 
     def on_epoch_end(self, shuffle = "train"): 
         #
@@ -234,9 +248,9 @@ class Loader():
         if shuffle.lower() == "train": 
             self.train_generator.__random_shuffle__()
         elif shuffle.lower() == "test": 
-            self.test_generator.__random_shuffle__()
+            self.test_patch_generator.__random_shuffle__()
         elif shuffle.lower() == "val": 
-            self.val_generator.__random_shuffle__()
+            self.test_img_complete_generator.__random_shuffle__()
     
 
     def __len__(self):
