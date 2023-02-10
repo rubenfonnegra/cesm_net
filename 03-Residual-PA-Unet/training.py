@@ -5,10 +5,16 @@ import time
 import argparse
 import datetime
 import itertools
+from matplotlib.pyplot import step
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 from torchinfo import summary
+import torch
+import torch.nn.functional as F
+
+from torch.autograd import Variable
+import torchvision.transforms as transforms
 
 from utils import *
 from models import *
@@ -16,62 +22,65 @@ from dataloader import *
 
 
 def setup_configs(args):
-    #
+    
     os.makedirs(args.result_dir + "/%s" % args.exp_name, exist_ok=True)
     args.result_dir = args.result_dir + "/%s" % args.exp_name
 
-    #if args.WGAN: args.PatchGAN = False
     if not args.model and not args.generate: 
         raise NotImplementedError ("Which model to use? Implemented: UNet, GAN ")
 
-    #print(args)
     if not args.generate:
         save_configs(args)
     
     args.cuda = True if torch.cuda.is_available() else False
-    # os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-
 
 def run_model(args): 
-    #
-    import torch
-    import torch.nn.functional as F
-    
-    from torch.autograd import Variable
-    import torchvision.transforms as transforms
     
     # Initialize generator and discriminator
     generator = Residual_PA_UNet_Generator(in_channels = args.channels)
-    #summary(generator, input_size=(5, 1, 256,256))
+    summary(generator, input_size=(5, 1, 256,256))
     
     # Choose correct type of D
     if args.generate:
-        #
         discriminator = None
         to_cuda = [generator]
     
     elif args.model == "UNet":
         to_cuda = [generator]
         discriminator = None 
-   
+    
+    elif args.model == "GAN":
+
+        # Create D
+        discriminator = PatchGAN_Discriminator(n_channels = args.channels)
+        GAN_loss = nn.MSELoss()
+
+        # Calculate output of image discriminator (PatchGAN)
+        patch = (1, args.image_size // 2 ** 4, args.image_size // 2 ** 4)
+        to_cuda = [generator, discriminator]
+    
     else: 
         discriminator = None
         to_cuda = [generator]
     
-
-    pixelwise_loss, lambda_pixel = torch.nn.L1Loss(), 100
-    to_cuda.append (pixelwise_loss)
+    pixelwise_loss, lambda_pixel = torch.nn.L1Loss(), args.lambda_pixel
+    to_cuda.append( pixelwise_loss )
 
     # Move everything to gpu
-    generator.cuda()
+    if args.cuda:
+        for model in to_cuda:
+            model.cuda()
 
     # Load model in case of training. Otherwise, random init
     if args.epoch != 0:
+
         generator.load_state_dict(torch.load("{0}/saved_models/G_chkp_{1}.pth".format(args.result_dir, args.epoch)))
         print ("Weights from checkpoint: {0}/saved_models/G_chkp_{1}.pth".format(args.result_dir, args.epoch))
+
         if discriminator != None: 
             discriminator.load_state_dict(torch.load("{0}/saved_models/D_chkp_{1}.pth".format(args.result_dir, args.epoch)))
             print ("Weights from checkpoint: {0}/saved_models/D_chkp_{1}.pth".format(args.result_dir, args.epoch))
+
     else:
                
         if   args.weigth_init == "normal":
@@ -97,14 +106,14 @@ def run_model(args):
     # In case of validation option. Otherwise, move to train
     if args.generate: 
         #
-        print ("\n [*] -> Generating test images.... \n")
+        print ("\n [*] -> Generating test patches.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                    shuffled = False, write_log = True, \
                                    output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
-                                   val=False)
+                                   img_complete=False)
         print ("\n [✓] -> Done! \n\n")
         
-        print ("\n [*] -> Generating validation images.... \n")
+        print ("\n [*] -> Generating test images complete.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                    shuffled = False, write_log = True, \
                                    output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
@@ -164,10 +173,18 @@ def run_model(args):
             optimizer_G.zero_grad()
 
             # GAN loss 
-            fake_out = generator(real_in)
+            fake_out, _ = generator(real_in)
 
             if args.model == "UNet":
                 loss_GAN = torch.tensor(0)
+            
+            elif args.model == "GAN":
+                # Adversarial ground truths
+                valid = Variable(Tensor(np.ones ((real_in.size(0), *patch))), requires_grad=False)
+                fake  = Variable(Tensor(np.zeros((real_in.size(0), *patch))), requires_grad=False)
+
+                fake_pred = discriminator(fake_out, real_in)
+                loss_GAN = GAN_loss(fake_pred, valid)
                         
             # Pixel-wise loss
             loss_pixel = pixelwise_loss(fake_out, real_out) 
@@ -182,6 +199,23 @@ def run_model(args):
 
             if args.model == "UNet":
                 loss_D = torch.tensor(0)
+            
+            if args.model == "GAN":
+                optimizer_D.zero_grad()
+
+                # Real lossreal_in
+                real_pred = discriminator(real_out, real_in)
+                loss_real = GAN_loss(real_pred, valid)
+
+                # Fake loss
+                fake_pred = discriminator(fake_out.detach(), real_in)
+                loss_fake = GAN_loss(fake_pred, fake)
+
+                # Total loss
+                loss_D = 0.5 * (loss_real + loss_fake)
+
+                loss_D.backward()
+                optimizer_D.step()
                       
             
             # ------------------------------------
@@ -228,7 +262,7 @@ def run_model(args):
                     wandb.log(
                         {
                         "Batch/G": loss_G.item(),
-                        "Batch/G/Pixel_Loss": loss_pixel.item()
+                        "Batch/G_Pixel_Loss": loss_pixel.item()
                         },
                         step=(epoch*args.batch_size)+i
                     )
@@ -241,15 +275,13 @@ def run_model(args):
         monitor.write_logs(avg_names, avg_logs, epoch)
         
         if args.use_wandb:
+
+            data = {
+                    'Avg_Ep/G': avg_logs[1],
+                    'Avg_Ep/G_Pixel_Loss': avg_logs[3]
+                }
                     
-            wandb.log(
-                {
-                "Avg_Ep/G": avg_logs[1],
-                "Avg_Ep/G/Pixel_Loss": avg_logs[3],
-                "Avg_Ep/Time/": avg_logs[-1]
-                },
-                step = epoch
-            )
+            wandb.log(data)
 
         # Shuffle train data everything
         data_loader.on_epoch_end(shuffle = "train")

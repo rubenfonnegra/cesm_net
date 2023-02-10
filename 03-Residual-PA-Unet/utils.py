@@ -132,19 +132,16 @@ def save_configs (args):
         for key in args_dict.keys():
             f.write("{0}: {1}, \n".format(json.dumps(key), json.dumps(args_dict[key])))
         f.write("\n")
-        
-        # Send experiment config to WandB
-        wandb.config = args_dict
 
 ##
 ## Image and stats saving in generation mode
 ## THIS FUNCTION MUST BE CHANGED BEFORE COMPUTING METRICS 
 ## 
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
-                               output_dir = None, write_log = False, val = True):
+                               output_dir = None, write_log = False, img_complete = True):
     
-        dataloader_ = dataloader.val_generator if (val) else dataloader.test_generator
-        #
+        dataloader_ = dataloader.test_img_complete_generator if (img_complete) else dataloader.test_patch_generator
+        
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
         ce_m = torch.nn.L1Loss()
@@ -158,7 +155,8 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
         else: 
             lucky = np.arange(0, args.sample_size)
         
-        out_dir = output_dir+"imgs_completa/" if (val) else output_dir+"imgs_parches/"
+        out_dir = output_dir+"imgs_completa/" if (img_complete) else output_dir+"imgs_parches/"
+        out_dir_attn = output_dir+"attn_maps/"+"imgs_completa/" if (img_complete) else output_dir+"attn_maps/"+"imgs_parches/"
         os.makedirs(out_dir, exist_ok = True)
         m_fi, s_fi, p_fi = [], [], []
 
@@ -169,8 +167,15 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                 real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
                 real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-                fake_out = generator(real_in)
+                fake_out, dictOutput = generator(real_in)
                 
+                os.makedirs(out_dir_attn+str(l), exist_ok = True)
+
+                for key, value in dictOutput.items():
+
+                    value = value.cpu().detach().numpy()
+                    np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
+
                 if difference:
                     diffmap = abs(real_out.data - fake_out.data) 
                     img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
@@ -183,7 +188,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                     
                     save_images(img_sample, output_dir = out_dir + "%s.png" % (k), \
                                 diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
-            else: #except Exception as e:
+            else:
                 print (e)
                 continue
         
@@ -194,10 +199,10 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                                                 np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
             
             dict = {args.exp_name + "avg_fim" : stats_fi}
-            if val:
-                w = csv.writer(open("Results/{0}_stats_val.csv".format(args.exp_name), "a"))
+            if img_complete:
+                w = csv.writer(open("Results/{0}_stats_img_complete.csv".format(args.exp_name), "a"))
             else:
-                w = csv.writer(open("Results/{0}_stats_test.csv".format(args.exp_name), "a"))
+                w = csv.writer(open("Results/{0}_stats_patch.csv".format(args.exp_name), "a"))
                 
             for key, val in dict.items(): w.writerow([key, val]) #"""
             print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
@@ -214,7 +219,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
             output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
 
         if shuffled: 
-            lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+            lucky = np.random.randint(0, len(dataloader.test_img_complete_generator), args.sample_size)
         else: 
             lucky = np.arange(0, args.sample_size)
         
@@ -222,11 +227,11 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
         m_fi, s_fi, p_fi= [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
-            img = dataloader.test_generator[int(l)]
+            img = dataloader.test_img_complete_generator[int(l)]
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-            fake_out = generator(real_in)
+            fake_out, _ = generator(real_in)
 
             if difference:
                 diffmap = abs(real_out.data - fake_out.data) 
