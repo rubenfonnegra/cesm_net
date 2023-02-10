@@ -206,11 +206,11 @@ for i in tqdm(meta_.index, ncols = 100):
     dcm1 = scaler(dcm1, range_out = [0,1])
     dcm2 = scaler(dcm2, range_out = [0,1])
     
-    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
+    #patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
     
     _, axes = plt.subplots(1,2, figsize=(12, 8))
-    axes[0].imshow(im_1_c, cmap="gray")
-    axes[1].imshow(im_2_c, cmap="gray")
+    axes[0].imshow(dcm1, cmap="gray")
+    axes[1].imshow(dcm2, cmap="gray")
     
     for ax in axes: ax.set_axis_off()
     plt.tight_layout()
@@ -221,53 +221,53 @@ for i in tqdm(meta_.index, ncols = 100):
     
 #    #plt.show()
     
-    save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
+    save_images([[dcm1], [dcm2]], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
+
+
+# subset = "test"
+
+# # meta_ = pd.read_csv("train_L_MLO.csv")
+# #meta_ = pd.read_csv("{0}_{1}_{2}.csv".format(subset, b_id, pr_id))
+# meta_ = pd.read_csv( os.path.join( path_csv, f"{subset}_{b_id}_{pr_id}.csv" ) )
+
+# for i in tqdm(meta_.index, ncols = 100):
+#     # print(path + meta_["le_file"].iloc[i], path + meta_["rec_file"].iloc[i])
+#     name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
+        
+#     if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
+#         continue
+    
+#     print (name_p + b_id + pr_id)
+    
+#     dcm1 = pydicom.dcmread(path + meta_["le_file"].iloc[i]).pixel_array
+#     dcm2 = pydicom.dcmread(path + meta_["rec_file"].iloc[i]).pixel_array
+    
+#     wl, ww = 2020, 2280
+    
+#     dcm2 = clamp_histogram(dcm2, range_ = [wl, ww])
+    
+#     dcm1 = scaler(dcm1, range_out = [0,1])
+#     dcm2 = scaler(dcm2, range_out = [0,1])
+    
+#     #patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 20, patch_size = 256, return_patch_locs=True)
+    
+#     _, axes = plt.subplots(1,2, figsize=(12, 8))
+#     axes[0].imshow(im_1_c, cmap="gray")
+#     axes[1].imshow(im_2_c, cmap="gray")
+    
+#     for ax in axes: ax.set_axis_off()
+#     plt.tight_layout()
+#     #os.makedirs("cesm_patches/vis/{0}/".format(subset), exist_ok = True)
+#     #plt.savefig("cesm_patches/vis/{0}/{1}_{2}_{3}.png".format(subset, name_p, b_id, pr_id))
+#     os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
+#     plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}_{b_id}_{pr_id}.png") )
+    
+# #    #plt.show()
+    
+#     save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
 
 
 subset = "test"
-
-# meta_ = pd.read_csv("train_L_MLO.csv")
-#meta_ = pd.read_csv("{0}_{1}_{2}.csv".format(subset, b_id, pr_id))
-meta_ = pd.read_csv( os.path.join( path_csv, f"{subset}_{b_id}_{pr_id}.csv" ) )
-
-for i in tqdm(meta_.index, ncols = 100):
-    # print(path + meta_["le_file"].iloc[i], path + meta_["rec_file"].iloc[i])
-    name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
-        
-    if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
-        continue
-    
-    print (name_p + b_id + pr_id)
-    
-    dcm1 = pydicom.dcmread(path + meta_["le_file"].iloc[i]).pixel_array
-    dcm2 = pydicom.dcmread(path + meta_["rec_file"].iloc[i]).pixel_array
-    
-    wl, ww = 2020, 2280
-    
-    dcm2 = clamp_histogram(dcm2, range_ = [wl, ww])
-    
-    dcm1 = scaler(dcm1, range_out = [0,1])
-    dcm2 = scaler(dcm2, range_out = [0,1])
-    
-    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 20, patch_size = 256, return_patch_locs=True)
-    
-    _, axes = plt.subplots(1,2, figsize=(12, 8))
-    axes[0].imshow(im_1_c, cmap="gray")
-    axes[1].imshow(im_2_c, cmap="gray")
-    
-    for ax in axes: ax.set_axis_off()
-    plt.tight_layout()
-    #os.makedirs("cesm_patches/vis/{0}/".format(subset), exist_ok = True)
-    #plt.savefig("cesm_patches/vis/{0}/{1}_{2}_{3}.png".format(subset, name_p, b_id, pr_id))
-    os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
-    plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}_{b_id}_{pr_id}.png") )
-    
-#    #plt.show()
-    
-    save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
-
-
-subset = "val"
 #meta_ = pd.read_csv("{0}_{1}_{2}.csv".format(subset, b_id, pr_id))
 meta_ = pd.read_csv( os.path.join( path_csv, f"test_{b_id}_{pr_id}.csv" ) )
 
