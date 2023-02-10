@@ -106,12 +106,13 @@ def run_model(args):
     # In case of validation option. Otherwise, move to train
     if args.generate: 
         #
-        print ("\n [*] -> Generating test patches.... \n")
-        generate_images_with_stats(args, data_loader, generator, args.epoch, \
-                                   shuffled = False, write_log = True, \
-                                   output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
-                                   img_complete=False)
-        print ("\n [✓] -> Done! \n\n")
+        """ Not used in image complete exp """
+        # print ("\n [*] -> Generating test patches.... \n")
+        # generate_images_with_stats(args, data_loader, generator, args.epoch, \
+        #                            shuffled = False, write_log = True, \
+        #                            output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
+        #                            img_complete=False)
+        # print ("\n [✓] -> Done! \n\n")
         
         print ("\n [*] -> Generating test images complete.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \

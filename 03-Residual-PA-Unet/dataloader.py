@@ -122,15 +122,18 @@ class ValImageDataset(Dataset):
         # self.transforms = T.Compose(transforms_)
         self.transforms = T.Compose([
                                 T.Resize((256, 256), Image.BICUBIC),
-                                T.ToTensor()
+                                T.ToTensor(),
+                                T.RandomHorizontalFlip(),
                             ])
         
 
     
     def __random_shuffle__(self): 
-        #
-        self.files, self.targs, self.metadata = shuffle(self.files, self.targs, self.metadata )
-        self.metadata.index = np.arange(len(self.files)) 
+        
+        """ For image complete exp """
+        # self.files, self.targs, self.metadata = shuffle(self.files, self.targs, self.metadata )
+        # self.metadata.index = np.arange(len(self.files))
+        self.files, self.targs = shuffle(self.files, self.targs)
     
 
     def __getitem__(self, index):
@@ -207,20 +210,20 @@ class Loader():
             raise NotImplementedError (dataset_name, "Database not implemented")
         
 
-        self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
+        self.train_generator = ValImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
                                             name=self.dataset_name, format=self.format,
                                             batch_size=batch_size, num_workers = self.num_workers, 
                                             image_size=img_res, n_channels=n_channels, 
                                             shuffle = True, transforms_ = self.transforms)
         
-
-        self.test_patch_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
-                                                name=self.dataset_name, format=self.format,
-                                                batch_size=batch_size, num_workers = self.num_workers, 
-                                                image_size=img_res, n_channels=n_channels, 
-                                                shuffle = True, transforms_ = self.transforms)
+        """ Not use in the exp image complete """
+        # self.test_patch_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+        #                                         name=self.dataset_name, format=self.format,
+        #                                         batch_size=batch_size, num_workers = self.num_workers, 
+        #                                         image_size=img_res, n_channels=n_channels, 
+        #                                         shuffle = True, transforms_ = self.transforms)
         
-        self.test_img_complete_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
+        self.test_img_complete_generator  = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
