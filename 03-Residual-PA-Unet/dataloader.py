@@ -214,13 +214,13 @@ class Loader():
                                             shuffle = True, transforms_ = self.transforms)
         
 
-        self.test_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+        self.test_patch_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
         
-        self.val_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
+        self.test_img_complete_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
@@ -234,9 +234,9 @@ class Loader():
         if shuffle.lower() == "train": 
             self.train_generator.__random_shuffle__()
         elif shuffle.lower() == "test": 
-            self.test_generator.__random_shuffle__()
+            self.test_patch_generator.__random_shuffle__()
         elif shuffle.lower() == "val": 
-            self.val_generator.__random_shuffle__()
+            self.test_img_complete_generator.__random_shuffle__()
     
 
     def __len__(self):
