@@ -163,6 +163,11 @@ def run_model(args):
         epoch_stats, it = {}, 0
         for name in tb_names: epoch_stats[name] = []
 
+        if((epoch != 0) and (epoch % 150) == 0):
+            lambda_pixel = lambda_pixel * 2
+            optimizer_G.param_groups[0]['lr'] = optimizer_G.param_groups[0]['lr'] * 10.
+
+
         for i in range(0, len(data_loader), args.batch_size):
             #
             it += 1
@@ -178,8 +183,11 @@ def run_model(args):
 
             optimizer_G.zero_grad()
 
-            # GAN loss 
-            fake_out, _ = generator(real_in)
+            # GAN loss
+            if (args.model == "UNet") or (args.model == "GAN"):
+                fake_out = generator(real_in)
+            else:
+                fake_out, _ = generator(real_in)
 
             if args.model != "GAN":
                 loss_GAN = torch.tensor(0)

@@ -139,13 +139,13 @@ class Residual_PA_UNet_Generator(nn.Module):
         )
 
         """ DownSampling Block """
-        self.RPA1   = Residual_PA_block_1(32,32)
+        self.RPA1   = Residual_PA_block_2(32,32)
         self.DS1    = DS_block(32,64)
-        self.RPA2   = Residual_PA_block_1(64,64)
+        self.RPA2   = Residual_PA_block_2(64,64)
         self.DS2    = DS_block(64,128)
-        self.RPA3   = Residual_PA_block_1(128,128)
+        self.RPA3   = Residual_PA_block_2(128,128)
         self.DS3    = DS_block(128,256)
-        self.RPA4   = Residual_PA_block_1(256, 256)
+        self.RPA4   = Residual_PA_block_2(256, 256)
         self.DS4    = DS_block(256,256)
 
         """ Fusion Block """
@@ -161,13 +161,13 @@ class Residual_PA_UNet_Generator(nn.Module):
 
         """ Upsampling Block"""
         self.US1 = US_block( 256, 256 )
-        self.RPA5 = Residual_PA_block_1( 256, 256 )
+        self.RPA5 = Residual_PA_block_2( 256, 256 )
         self.US2 = US_block( 256, 128 )
-        self.RPA6 = Residual_PA_block_1( 128, 128 )
+        self.RPA6 = Residual_PA_block_2( 128, 128 )
         self.US3 = US_block( 128, 64 )
-        self.RPA7 = Residual_PA_block_1( 64, 64 )
+        self.RPA7 = Residual_PA_block_2( 64, 64 )
         self.US4 = US_block( 64, 32 )
-        self.RPA8 = Residual_PA_block_1( 32, 32 )
+        self.RPA8 = Residual_PA_block_2( 32, 32 )
         
         """ Output Convolutional """
         self.convOut = nn.Conv2d(
