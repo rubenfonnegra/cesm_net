@@ -139,7 +139,7 @@ class Residual_PA_UNet_Generator(nn.Module):
         )
 
         """ DownSampling Block """
-        self.RPA1   = Residual_PA_block_2(32,32)
+        self.RPA1   = Residual_PA_block_2( 32, 32)
         self.DS1    = DS_block(32,64)
         self.RPA2   = Residual_PA_block_2(64,64)
         self.DS2    = DS_block(64,128)

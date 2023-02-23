@@ -156,7 +156,7 @@ class Residual_PA_block_2(nn.Module):
             nn.ReLU(),
             
             nn.Conv2d(
-                in_channels     = in_channels,
+                in_channels     = out_channels,
                 out_channels    = out_channels,
                 kernel_size     = 3,
                 stride          = 1,

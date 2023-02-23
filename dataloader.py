@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
+from skimage.transform import resize
 
 import torch
 from torch.utils.data import Dataset
@@ -97,23 +98,26 @@ class ValImageDataset(Dataset):
                  n_channels = 1,
                  shuffle = True,
                  format = "png", num_workers = 10, 
-                 transforms_=None, name="cesm", **kwargs):
+                 transforms_=None, name="cesm",
+                 crop_train = False, crop_test = False,
+                 **kwargs):
         #
         'Initialization'
-        self.files = [] #inputs  #np.array(inputs)  # list_IDs
-        self.targs = [] #outputs #np.array(outputs)   # labels
-        self.proj = proj
-        self.dim = image_size
-        self.batch_size = batch_size
-        self.n_channels = n_channels
-        self.shuffle = shuffle
-        self.name = name
-        self.num_workers = num_workers
+        self.files          = [] #inputs  #np.array(inputs)  # list_IDs
+        self.targs          = [] #outputs #np.array(outputs)   # labels
+        self.proj           = proj
+        self.dim            = image_size
+        self.batch_size     = batch_size
+        self.n_channels     = n_channels
+        self.shuffle        = shuffle
+        self.name           = name
+        self.num_workers    = num_workers
+        self.crop_train     = crop_train
+        self.crop_test      = crop_test
         
         files = natsorted(glob.glob(f"{inputs}/*.{format}") , alg=ns.PATH)
         targs = natsorted(glob.glob(f"{outputs}/*.{format}"), alg=ns.PATH)
         
-        # self.files = [file_  ]
         for file_ in files: 
             if self.proj in file_: self.files.append(file_)
         for targ_ in targs: 
@@ -125,8 +129,6 @@ class ValImageDataset(Dataset):
                                 T.ToTensor(),
                             ])
         
-
-    
     def __random_shuffle__(self): 
         
         """ For image complete exp """
@@ -140,12 +142,14 @@ class ValImageDataset(Dataset):
         if isinstance( index, int ) :
             sample = index % len(self.files)
             
-            if self.name == "cesm":
+            #if self.name == "cesm":
+            if self.crop_test:
+                im_input_, im_output_ = self.crop_images(sample)
+            else:
                 im_input_  = Image.open(self.files[sample]).convert("F")
                 im_output_ = Image.open(self.targs[sample]).convert("F")
-            
-            im_input_  = self.transforms(im_input_)
-            im_output_ = self.transforms(im_output_)
+                im_input_  = self.transforms(im_input_)
+                im_output_ = self.transforms(im_output_)
             
             return {"in": im_input_, "out": im_output_}
 
@@ -157,12 +161,14 @@ class ValImageDataset(Dataset):
             for i, idx in enumerate(range(*index.indices(len(self)))): 
                 sample = idx % len(self.files)
                 
-                if self.name == "cesm":
+                #if self.name == "cesm":
+                if self.crop_train:
+                    im_input_, im_output_ = self.crop_images(sample)
+                else:
                     im_input_  = Image.open(self.files[sample]).convert("F")
                     im_output_ = Image.open(self.targs[sample]).convert("F")
-                
-                im_input_  = self.transforms(im_input_)
-                im_output_ = self.transforms(im_output_)
+                    im_input_  = self.transforms(im_input_)
+                    im_output_ = self.transforms(im_output_)
                 
                 batch_input_[i] = im_input_; batch_output_[i] = im_output_
                 
@@ -170,42 +176,81 @@ class ValImageDataset(Dataset):
 
     def __len__(self):
         return len(self.files)
+    
+    def crop_images(self, sample):
 
+        im_input_  = Image.open(self.files[sample]).convert("F")
+        im_output_ = Image.open(self.targs[sample]).convert("F")
+        im_input_   = np.asarray(im_input_)
+        im_output_  = np.asarray(im_output_)
 
+        max_heigth = []
+        max_widht = []
 
+        for j in range( im_input_.shape[1]):
+            
+            if(( im_input_[:,j] != 0.).any() ):
+                max_widht.append(j)
+                
+        
+        for j in range( im_input_.shape[0]):
+
+            if(( im_input_[j,:] != 0.).any() ):
+                max_heigth.append(j)                        
+    
+        if ( (im_input_[:, 0] != 0.).any() ):
+
+            max_widht = max_widht[-1]
+            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+        
+        else:
+            max_widht = max_widht[0]
+            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
+            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
+
+        im_input_   = resize(im_input_, (256, 256) )
+        im_output_  = resize(im_output_, (256, 256) )
+        
+        im_input_   = torch.from_numpy(im_input_[np.newaxis,...])
+        im_output_  = torch.from_numpy(im_output_[np.newaxis,...])
+
+        return im_input_, im_output_
 
 
 class Loader():
     def __init__(self, data_path, proj, 
                  batch_size=50, dataset_name = "cesm", format = "png", num_workers = 10,
-                 img_res=(128, 128), transforms = None, n_channels = 3, img_complete = True, **kwargs):
-        #
-        #data_path = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/Estudios_A2/"
-        #data_path = "/media/ruben-kubuntu/Datos/breast_data/"
-        self.data_path = data_path
-        
-        self.batch_size = batch_size
-        self.dataset_name = dataset_name.lower()
-        self.format = format
-        self.img_res = img_res
-        self.transforms = transforms
-        self.n_channels = n_channels
-        self.proj = proj
-        self.num_workers = num_workers
-        self.img_complete = img_complete
+                 img_res=(128, 128), transforms = None, n_channels = 3, img_complete = True,
+                 crop_train = False, crop_test = False, **kwargs):
 
-
-        self.img_res = img_res
+        self.data_path      = data_path        
+        self.batch_size     = batch_size
+        self.dataset_name   = dataset_name.lower()
+        self.format         = format
+        self.img_res        = img_res
+        self.transforms     = transforms
+        self.n_channels     = n_channels
+        self.proj           = proj
+        self.num_workers    = num_workers
+        self.img_complete   = img_complete
+        self.crop_train     = crop_train
+        self.crop_test      = crop_test
         
         if dataset_name.lower() == "cesm":
-            # (train_i, train_o, train_meta), (test_i, test_o, test_meta), (val_i, val_o, val_meta) = self.get_duke_metadata()
             train_i = data_path + "/LE/train/"
             train_o = data_path + "/RC/train/"
             test_i  = data_path + "/LE/test/"
             test_o  = data_path + "/RC/test/"
             val_i   = data_path + "/LE/val/"
             val_o   = data_path + "/RC/val/"
-        
+
+        elif dataset_name.lower() == "cdd-cesm":
+            train_i = data_path + "/LE/train/"
+            train_o = data_path + "/SI/train/"
+            test_i  = data_path + "/LE/test/"
+            test_o  = data_path + "/SI/test/"
+
         else: 
             raise NotImplementedError (dataset_name, "Database not implemented")
         
@@ -214,13 +259,15 @@ class Loader():
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
-                                                shuffle = True, transforms_ = self.transforms)
+                                                shuffle = True, transforms_ = self.transforms,
+                                                crop_train= self.crop_train, crop_test = self.crop_test)
                         
             self.test_img_complete_generator  = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                     name=self.dataset_name, format=self.format,
                                                     batch_size=batch_size, num_workers = self.num_workers, 
                                                     image_size=img_res, n_channels=n_channels, 
-                                                    shuffle = True, transforms_ = self.transforms)
+                                                    shuffle = True, transforms_ = self.transforms,
+                                                    crop_train= self.crop_train, crop_test = self.crop_test)
 
         else:
             self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
