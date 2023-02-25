@@ -258,6 +258,7 @@ class SA_UNet_Generator(nn.Module):
         self.attn2  = Self_Attention(256)
         self.RB4    = R_block(256,256)
         self.DS4    =  DS_block(256,256)
+        self.attn3  = Self_Attention(256)
 
         """ Fusion Block """
         self.convFusion = nn.Conv2d(
@@ -306,9 +307,10 @@ class SA_UNet_Generator(nn.Module):
         outAttn2, attnMaps2     = self.attn2(outDS)
         outRB4                  = self.RB4(outAttn2)
         outDS                   = self.DS4(outRB4)
+        outAttn3, attnMaps3     = self.attn3(outDS)
 
         """ Fusion Block Forward """
-        out = self.convFusion(outDS)
+        out = self.convFusion(outAttn3)
         out = self.batchnormFusion(out)
         #out = self.leakyReluFusion(out)
         out = self.reluFusion(out)
@@ -332,6 +334,7 @@ class SA_UNet_Generator(nn.Module):
             "image_input": img_input,
             "attn1": attnMaps1,
             "attn2": attnMaps2,
+            "attn3": attnMaps3,
             "output_image": out,
         }
 

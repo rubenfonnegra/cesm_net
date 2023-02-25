@@ -7,7 +7,7 @@ python3 run_models.py   --gpus 0 \
                         --dataset_name cesm \
                         --result_dir Results/06-Self-Attention/ \
                         --projection CC \
-                        --exp_name self-attention-unet-image-complete\
+                        --exp_name SA-unet-image-complete-three-layers\
                         --data_dir Data/data_img_complete/ \
                         --image_size 256 \
                         --channels 1 \
@@ -25,7 +25,7 @@ python3 run_models.py   --gpus 0 \
                         --generate \
                         --epoch 400 \
                         --model UNet \
-                        --exp_name self-attention-unet-image-complete \
+                        --exp_name SA-unet-image-complete-three-layers \
                         --result_dir Results/06-Self-Attention/ \
                         --sample_size 20 \
                         --dataset_name cesm \
