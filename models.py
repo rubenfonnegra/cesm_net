@@ -20,9 +20,9 @@ def weights_init_glorot (m):
 
 
 """ 
-********************************************************
-***** Implementation Self-Attention Unet Generator *****
-********************************************************
+*********************************************************
+***** Implementation Pixel-Attention #1 Unet Generator **
+*********************************************************
 """
 class SA_UNet_Generator(nn.Module):
     #
@@ -223,6 +223,115 @@ class Residual_PA_UNet_Generator(nn.Module):
             "attn6": attn6,
             "attn7": attn7,
             "attn8": attn8,
+            "output_image": out,
+        }
+
+        return out, outDictionary
+
+""" 
+*********************************************************
+***** Implementation Self-Attention Unet Generator ******
+*********************************************************
+"""
+class SA_UNet_Generator(nn.Module):
+
+    def __init__(self, in_channels ):
+        super(SA_UNet_Generator, self).__init__()
+
+        """ Input Convolutional """
+        self.convInput = nn.Conv2d(
+            in_channels     = in_channels,
+            out_channels    = 32,
+            kernel_size     = 3,
+            stride          = 1,
+            padding         = 'same'
+        )
+
+        """ DownSampling Block """
+        self.RB1    = R_block(32,32)
+        self.DS1    = DS_block(32,64)
+        self.RB2    = R_block(64,64)
+        self.DS2    = DS_block(64,128)
+        self.attn1  = Self_Attention(128)
+        self.RB3    = R_block(128,128)
+        self.DS3    = DS_block(128,256)
+        self.attn2  = Self_Attention(256)
+        self.RB4    = R_block(256,256)
+        self.DS4    =  DS_block(256,256)
+
+        """ Fusion Block """
+        self.convFusion = nn.Conv2d(
+            in_channels     = 256,
+            out_channels    = 256,
+            kernel_size     = 3,
+            stride          = 1,
+            padding         = 'same'
+        )
+        self.batchnormFusion = nn.BatchNorm2d(256, momentum=0.8)
+        #self.leakyReluFusion = nn.LeakyReLU(negative_slope=0.2)
+        self.reluFusion = nn.ReLU()
+
+        """ Upsampling Block"""
+        self.US1 = US_block( 256, 256 )
+        self.RB5 = R_block( 256, 256 )
+        self.US2 = US_block( 256, 128 )
+        self.RB6 = R_block( 128, 128 )
+        self.US3 = US_block( 128, 64 )
+        self.RB7 = R_block( 64, 64 )
+        self.US4 = US_block( 64, 32 )
+        self.RB8 = R_block( 32, 32 )
+        
+        """ Output Convolutional """
+        self.convOut = nn.Conv2d(
+            in_channels         = 32,
+            out_channels        = 1,
+            kernel_size         = 3,
+            stride              = 1,
+            padding             = 'same'
+        )
+        
+        self.actOut = nn.Sigmoid()
+    
+    def forward(self, img_input):
+        
+        """ DownSampling Block Forward """
+        outConvInit             = self.convInput(img_input)
+        outRB1                  = self.RB1(outConvInit)
+        outDS                   = self.DS1(outRB1)
+        outRB2                  = self.RB2(outDS)
+        outDS                   = self.DS2(outRB2)
+        outAttn1, attnMaps1     = self.attn1(outDS)
+        outRB3                  = self.RB3(outAttn1)
+        outDS                   = self.DS3(outRB3)
+        outAttn2, attnMaps2     = self.attn2(outDS)
+        outRB4                  = self.RB4(outAttn2)
+        outDS                   = self.DS4(outRB4)
+
+        """ Fusion Block Forward """
+        out = self.convFusion(outDS)
+        out = self.batchnormFusion(out)
+        #out = self.leakyReluFusion(out)
+        out = self.reluFusion(out)
+
+        """ Upsampling Block Forward """
+        out = self.US1( out, outRB4 )
+        out = self.RB5( out )
+        out = self.US2( out, outRB3 )
+        out = self.RB6( out )
+        out = self.US3(out, outRB2 )
+        out = self.RB7(out)
+        out = self.US4( out, outRB1 )
+        out = self.RB8(out)
+
+        """ Output Convolution """
+        out = self.convOut(out)
+        out = self.actOut(out)
+
+        outDictionary = {
+
+            "image_input": img_input,
+            "attn1": attnMaps1,
+            "attn2": attnMaps2,
             "output_image": out,
         }
 

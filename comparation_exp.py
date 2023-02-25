@@ -40,7 +40,7 @@ workers         = args.workers
 batch_size      = args.batch_size
 image_size      = args.image_size
 channels        = args.channels
-dataset_name    = args.dataset_name
+dataset_name    = "cdd-cesm"
 model           = args.model
 epoch           = args.epoch
 

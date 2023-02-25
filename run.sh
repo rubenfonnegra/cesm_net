@@ -4,14 +4,14 @@ cd /home/mirplab/Documents/kevin/01-cesm_net/
 
 # Experiment Unet CC
 python3 run_models.py   --gpus 0 \
-                        --dataset_name cdd-cesm \
-                        --result_dir /home/mirplab/Documents/kevin/01-cesm_net/Results/05-New-Data/ \
+                        --dataset_name cesm \
+                        --result_dir Results/06-Self-Attention/ \
                         --projection CC \
                         --exp_name self-attention-unet-image-complete\
-                        --data_dir Data/cdd-cesm/ \
+                        --data_dir Data/data_img_complete/ \
                         --image_size 256 \
                         --channels 1 \
-                        --batch_size 20 \
+                        --batch_size 10 \
                         --n_epochs 401 \
                         --workers 12 \
                         --sample_interval 50 \
@@ -26,20 +26,21 @@ python3 run_models.py   --gpus 0 \
                         --epoch 400 \
                         --model UNet \
                         --exp_name self-attention-unet-image-complete \
-                        --result_dir /home/mirplab/Documents/kevin/01-cesm_net/Results/05-New-Data/ \
+                        --result_dir Results/06-Self-Attention/ \
                         --sample_size 20 \
-                        --dataset_name cdd-cesm \
+                        --dataset_name cesm \
                         --projection CC \
-                        --data_dir Data/cdd-cesm/ \
+                        --data_dir Data/data_img_complete/ \
                         --image_size 256 \
                         --channels 1 \
                         --img_complete \
 
-python3 comparation_exp.py  --name_exp self-attention-unet-image-complete \
-                            --name_exp_fig "Self-Attention Unet Image Complete" \
-                            --path_results Results/05-New-Data/ \
-                            --model UNet \
-                            --epoch 400
+# python3 comparation_exp.py  --name_exp residual-PA-unet-image-complete-new-data \
+#                             --name_exp_fig "Residual PA Unet Image Complete New Data" \
+#                             --path_results Results/05-New-Data/ \
+#                             --path_data Data/cdd-cesm/ \
+#                             --model Residual-PA-Unet \
+#                             --epoch 400
 
 # python3 run_models.py   --gpus 0 \
 #                         --dataset_name cesm \

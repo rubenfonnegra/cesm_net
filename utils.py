@@ -167,14 +167,11 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                 real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
                 real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-                if(args.model == "UNet") or (args.model == "GAN"):
-                    fake_out = generator(real_in)
-                else:
-                    fake_out, dictOutput = generator(real_in)
-                    os.makedirs(out_dir_attn+str(l), exist_ok = True)
-                    for key, value in dictOutput.items():
-                        value = value.cpu().detach().numpy()
-                        np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
+                fake_out, dictOutput = generator(real_in)
+                os.makedirs(out_dir_attn+str(l), exist_ok = True)
+                for key, value in dictOutput.items():
+                    value = value.cpu().detach().numpy()
+                    np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
 
                 if difference:
                     diffmap = abs(real_out.data - fake_out.data) 
@@ -234,11 +231,8 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
             img = dataloader.test_img_complete_generator[int(l)]
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
-
-            if(args.model == "UNet") or (args.model == "GAN"):
-                fake_out = generator(real_in)
-            else:
-                fake_out, dictOutput = generator(real_in)
+            
+            fake_out, _ = generator(real_in)
 
             if difference:
                 diffmap = abs(real_out.data - fake_out.data) 
