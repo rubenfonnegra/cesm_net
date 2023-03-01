@@ -4,3 +4,4 @@ __pycache__/
 Results/
 Data
 wandb/
+run.sh

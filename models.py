@@ -149,7 +149,7 @@ class UNet_Generator_Deep(nn.Module):
             stride          = 1,
             padding         = 'same'
         )
-        self.batchnormFusion = nn.BatchNorm2d(256, momentum=0.8)
+        self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
         self.reluFusion = nn.ReLU()
 
         """ Upsampling Block"""

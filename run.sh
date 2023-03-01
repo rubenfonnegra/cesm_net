@@ -1,5 +1,5 @@
-source /media/labmirp/Datos/venvs/cesm_env/bin/activate
-cd /media/labmirp/Datos/workspaces/cesm_net/
+source /home/mirplab/Documents/kevin/venvs/cesm_venv/bin/activate
+cd /home/mirplab/Documents/kevin/01-cesm_net/
 
 
 # Experiment Unet CC
