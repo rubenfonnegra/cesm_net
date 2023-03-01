@@ -217,13 +217,13 @@ class UNet_Generator_Deep(nn.Module):
 
 """ 
 *********************************************************
-***** Implementation Pixel-Attention #1 Unet Generator **
+***** Implementation Pixel-Attention Unet Generator *****
 *********************************************************
 """
-class SA_UNet_Generator(nn.Module):
+class PA_UNet_Generator(nn.Module):
     #
     def __init__(self, in_channels ):
-        super(SA_UNet_Generator, self).__init__()
+        super(PA_UNet_Generator, self).__init__()
 
         """ Input Convolutional """
         self.convInput = nn.Conv2d(

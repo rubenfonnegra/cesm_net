@@ -41,11 +41,16 @@ def setup_configs(args):
 def run_model(args): 
     
     # Initialize generator and discriminator
-    if(args.model == "UNet"):
-        #generator = SA_UNet_Generator(in_channels = args.channels)
-        generator = UNet_Generator_Not_Deep(in_channels = args.channels)
+    if(args.model == "UNet_Deep"):
+        generator = UNet_Generator_Deep(in_channels = args.channels)
+    elif(args.model == "UNet_Not_Deep"):
+        generator = UNet_Generator_Not_Deep(in_channels= args.channels)
     elif(args.model == "Residual-PA-Unet"):
         generator = Residual_PA_UNet_Generator(in_channels= args.channels)
+    elif(args.model == "PA-UNet"):
+        generator = PA_UNet_Generator(in_channels= args.channels)
+    elif(args.model == "SA-UNet"):
+        generator = SA_UNet_Generator(in_channels= args.channels)
     
     summary(generator, input_size=(5, 1, 256,256))
     
@@ -54,11 +59,11 @@ def run_model(args):
         discriminator = None
         to_cuda = [generator]
     
-    elif args.model == "UNet":
+    elif args.type_model != "GAN":
         to_cuda = [generator]
         discriminator = None 
     
-    elif args.model == "GAN":
+    elif args.type_model == "GAN":
 
         # Create D
         discriminator = PatchGAN_Discriminator(n_channels = args.channels)
@@ -94,11 +99,11 @@ def run_model(args):
                
         if   args.weigth_init == "normal":
             generator.apply(weights_init_normal)
-            if args.model == "GAN": 
+            if args.type_model == "GAN": 
                 discriminator.apply(weights_init_normal)
         elif args.weigth_init == "glorot":
             generator.apply(weights_init_glorot)
-            if args.model == "GAN": 
+            if args.type_model == "GAN": 
                 discriminator.apply(weights_init_glorot)
     
 
@@ -135,16 +140,14 @@ def run_model(args):
 
     # Optimizers
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
-    if args.model == "GAN": 
+    if args.type_model == "GAN": 
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
-
 
     # Initialize logger 
     monitor = Monitor(logs_path = args.result_dir + "/Logs")
 
     # Tensor type
     Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
-
 
     # Setting up name of logs
     tb_names = [
@@ -164,7 +167,7 @@ def run_model(args):
     prev_time = time.time()
 
     for epoch in range(args.epoch, args.n_epochs):
-        #
+        
         epoch_stats, it = {}, 0
         for name in tb_names: epoch_stats[name] = []
 
@@ -182,13 +185,16 @@ def run_model(args):
             # ------------------------------------
 
             optimizer_G.zero_grad()
-            #fake_out, _ = generator(real_in)
-            fake_out = generator(real_in)
 
-            if args.model != "GAN":
+            if (args.type_model == "Attention"):
+                fake_out, _ = generator(real_in)
+            else:
+                fake_out    = generator(real_in)
+
+            if args.type_model != "GAN":
                 loss_GAN = torch.tensor(0)
             
-            elif args.model == "GAN":
+            elif args.type_model == "GAN":
                 # Adversarial ground truths
                 valid = Variable(Tensor(np.ones ((real_in.size(0), *patch))), requires_grad=False)
                 fake  = Variable(Tensor(np.zeros((real_in.size(0), *patch))), requires_grad=False)
@@ -207,10 +213,10 @@ def run_model(args):
             #          Train Discriminator
             # ------------------------------------
 
-            if args.model != "GAN":
+            if args.type_model != "GAN":
                 loss_D = torch.tensor(0)
             
-            if args.model == "GAN":
+            if args.type_model == "GAN":
                 optimizer_D.zero_grad()
 
                 # Real lossreal_in
@@ -300,7 +306,7 @@ def run_model(args):
             # Save model checkpoints
             os.makedirs("%s/saved_models/" % (args.result_dir), exist_ok = True)
             torch.save(generator.state_dict(), "{0}/saved_models/G_chkp_{1:03d}.pth".format(args.result_dir, epoch))
-            if args.model == "GAN": 
+            if args.type_model == "GAN": 
                 torch.save(discriminator.state_dict(), "{0}/saved_models/D_chkp_{1:03d}.pth".format(args.result_dir, epoch))
 
         # If at sample interval save image
