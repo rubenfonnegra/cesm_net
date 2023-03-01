@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import shutil
 from torch.autograd import Variable
 import torchvision.transforms as transforms
+from torch.optim.lr_scheduler import StepLR
 
 from utils import *
 from models import *
@@ -138,8 +139,10 @@ def run_model(args):
         exit()
     
 
-    # Optimizers
+    # Optimizer and Sheduler
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
+    sheduler    = StepLR( optimizer= optimizer_G, step_size=200, gamma=0.1)
+    
     if args.type_model == "GAN": 
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 
@@ -208,6 +211,7 @@ def run_model(args):
             
             loss_G.backward()
             optimizer_G.step()
+            sheduler.step()
 
             # ------------------------------------
             #          Train Discriminator
@@ -246,7 +250,7 @@ def run_model(args):
 
                 # Print log
                 sys.stdout.write(
-                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
+                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s; lr: %f" # 
                     % (
                         epoch,
                         args.n_epochs,
@@ -257,6 +261,7 @@ def run_model(args):
                         loss_GAN.item(),
                         loss_pixel.item(),
                         'ETA: %d:%d:%d' %(hours,minutes,seconds),
+                        optimizer_G.param_groups[0]["lr"]
                     )
                 )
 
@@ -278,7 +283,8 @@ def run_model(args):
                     wandb.log(
                         {
                         "Batch/G": loss_G.item(),
-                        "Batch/G_Pixel_Loss": loss_pixel.item()
+                        "Batch/G_Pixel_Loss": loss_pixel.item(),
+                        "Learning_Rate": optimizer_G.param_groups[0]["lr"],
                         },
                         step=(epoch*args.batch_size)+i
                     )
