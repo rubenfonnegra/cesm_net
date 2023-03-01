@@ -40,7 +40,7 @@ workers         = args.workers
 batch_size      = args.batch_size
 image_size      = args.image_size
 channels        = args.channels
-dataset_name    = "cdd-cesm"
+dataset_name    = "cesm"
 model           = args.model
 epoch           = args.epoch
 
@@ -66,7 +66,7 @@ data_loader = data_loader.test_img_complete_generator
 
 # Initialize generator and discriminator
 if(model == "UNet"):
-    generator = SA_UNet_Generator(in_channels = channels)
+    generator = UNet_Generator_Not_Deep(in_channels = channels)
 elif(model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= channels)
 

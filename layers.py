@@ -269,7 +269,7 @@ class US_block(nn.Module):
         self.relu = nn.ReLU()
 
         self.convOut = nn.Conv2d(
-            in_channels         = out_channels * 2,
+            in_channels         = in_channels,
             out_channels        = out_channels,
             kernel_size         = 3,
             stride              = 1,
@@ -285,7 +285,7 @@ class US_block(nn.Module):
         out = torch.cat( (out, skip_input), dim = 1)
         out = self.convOut( out )
         return out
-
+    
 """
 ---------- Implementation of DownSampling Block -----------
 

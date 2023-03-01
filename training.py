@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 from torchinfo import summary
 import torch
 import torch.nn.functional as F
-
+import shutil
 from torch.autograd import Variable
 import torchvision.transforms as transforms
 
@@ -23,8 +23,12 @@ from dataloader import *
 
 def setup_configs(args):
     
-    os.makedirs(args.result_dir + "/%s" % args.exp_name, exist_ok=True)
+    path = os.path.join(args.result_dir, args.exp_name, "code")
+    os.makedirs( path, exist_ok=True)
     args.result_dir = args.result_dir + "/%s" % args.exp_name
+    
+    for name in glob.glob('*.py'):
+        shutil.copyfile( os.path.join(".", name), os.path.join(args.result_dir, "code", name))
 
     if not args.model and not args.generate: 
         raise NotImplementedError ("Which model to use? Implemented: UNet, GAN ")
@@ -38,7 +42,8 @@ def run_model(args):
     
     # Initialize generator and discriminator
     if(args.model == "UNet"):
-        generator = SA_UNet_Generator(in_channels = args.channels)
+        #generator = SA_UNet_Generator(in_channels = args.channels)
+        generator = UNet_Generator_Not_Deep(in_channels = args.channels)
     elif(args.model == "Residual-PA-Unet"):
         generator = Residual_PA_UNet_Generator(in_channels= args.channels)
     
@@ -177,7 +182,8 @@ def run_model(args):
             # ------------------------------------
 
             optimizer_G.zero_grad()
-            fake_out, _ = generator(real_in)
+            #fake_out, _ = generator(real_in)
+            fake_out = generator(real_in)
 
             if args.model != "GAN":
                 loss_GAN = torch.tensor(0)
