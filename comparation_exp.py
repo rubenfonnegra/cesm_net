@@ -27,6 +27,7 @@ parser.add_argument("--image_size", type=int, default=256)
 parser.add_argument("--channels", type=int, default=1)
 parser.add_argument("--dataset_name", type=str, default="cesm")
 parser.add_argument("--model", type=str, default="UNet")
+parser.add_argument("--type_model", type=str, default="UNet")
 parser.add_argument("--epoch", type=int, default=400)
 args = parser.parse_args()
 
@@ -42,9 +43,10 @@ image_size      = args.image_size
 channels        = args.channels
 dataset_name    = "cesm"
 model           = args.model
+type_model      = args.type_model
 epoch           = args.epoch
 
-print(f"******************** Saving image metrics from {name_exp} experiment ********************")
+print(f"\n\n******************** Saving image metrics from {name_exp} experiment ********************")
 
 path_exp    = os.path.join( path_results, name_exp)
 path_res    = os.path.join( path_exp, "metrics", "images")
@@ -65,10 +67,16 @@ data_loader = Loader ( data_path = path_data, proj = projection, format = format
 data_loader = data_loader.test_img_complete_generator
 
 # Initialize generator and discriminator
-if(model == "UNet"):
-    generator = UNet_Generator_Not_Deep(in_channels = channels)
-elif(model == "Residual-PA-Unet"):
-    generator = Residual_PA_UNet_Generator(in_channels= channels)
+if(args.model == "UNet_Deep"):
+        generator = UNet_Generator_Deep(in_channels = args.channels)
+elif(args.model == "UNet_Not_Deep"):
+    generator = UNet_Generator_Not_Deep(in_channels= args.channels)
+elif(args.model == "Residual-PA-Unet"):
+    generator = Residual_PA_UNet_Generator(in_channels= args.channels)
+elif(args.model == "PA-UNet"):
+    generator = PA_UNet_Generator(in_channels= args.channels)
+elif(args.model == "SA-UNet"):
+    generator = SA_UNet_Generator(in_channels= args.channels)
 
 generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"G_chkp_{epoch}.pth") ))
 print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', f'G_chkp_{epoch}.pth')}")
@@ -84,10 +92,10 @@ for k, l in tqdm(enumerate(lucky), ncols=100):
     real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-    if(model == "UNet"):
-        fake_out    = generator(real_in)
-    else:
+    if(type_model == "Attention"):
         fake_out, _ = generator(real_in)
+    else:
+        fake_out    = generator(real_in)
 
     """ Convert torchs tensor to numpy arrays """
     real_in     = real_in.data.cpu().numpy()[0,0,...]
@@ -95,33 +103,39 @@ for k, l in tqdm(enumerate(lucky), ncols=100):
     fake_out    = fake_out.data.cpu().numpy()[0,0,...]
 
     """ Create mask """
-    mask        = (real_out != 0.) * 1.
-    fake_out    = fake_out * mask
-    real_out    = real_out * mask
+    mask                = (real_out != 0.) * 1.
+    fake_out_mask       = fake_out * mask
+    real_out_mask       = real_out * mask
 
 
-    diffmap = abs(real_out - fake_out)
-    m_, s_, p_ = pixel_metrics(real_out, fake_out)
+    diffmap_mask    = abs(real_out_mask - fake_out_mask)
+    diffmap         = abs(real_out - fake_out)
+    m_, s_, p_      = pixel_metrics(real_out_mask, fake_out_mask)
     m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
 
-    fig, axes = plt.subplots(1, 5, figsize=(24,6))
+    fig, axes = plt.subplots(3, 2, figsize=(24,6))
 
-    axes[0].imshow(real_in, cmap="gray", vmin=0, vmax=1)
-    axes[0].set_title("Low Energy")
-    axes[1].imshow(real_out, cmap="gray", vmin=0, vmax=1)
-    axes[1].set_title("Substacted")
-    axes[2].imshow(fake_out, cmap="gray", vmin=0, vmax=1)
-    axes[2].set_title("Substacted Generate")
-    axes[3].imshow(mask, cmap="gray", vmin=0, vmax=1)
-    axes[3].set_title("Mask Metric")
-    axes[4].set_title("Difference Map")
+    axes[0,0].imshow(real_out, cmap="gray", vmin=0, vmax=1)
+    axes[0,0].set_title("Recombined")
+    axes[0,1].imshow(fake_out, cmap="gray", vmin=0, vmax=1)
+    axes[0,1].set_title("Recombined Generated")
+    axes[1,0].imshow(fake_out_mask, cmap="gray", vmin=0, vmax=1)
+    axes[1,0].set_title("Recombined Generated Mask")
+    axes[1,1].imshow(real_out_mask, cmap="gray", vmin=0, vmax=1)
+    axes[1,1].set_title("Recombined Real Mask")
 
-    im = axes[4].imshow(diffmap, cmap='hot', vmin=0, vmax=1)
-    divider = make_axes_locatable(axes[4])
+    axes[2,0].set_title("Difference Map")
+    axes[2,1].set_title("Difference Map Mask")
+
+    im1 = axes[2,0].imshow(diffmap, cmap='hot', vmin=0, vmax=1)
+    divider = make_axes_locatable(axes[2,0])
     cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
+    plt.colorbar(im1, cax=cax)
 
-    #sns.heatmap( np.squeeze(diffmap), cmap = "hot", ax=axes[4], vmin=0, vmax=1)
+    im2 = axes[2,1].imshow(diffmap_mask, cmap='hot', vmin=0, vmax=1)
+    divider = make_axes_locatable(axes[2,1])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im2, cax=cax)
 
     fig.suptitle(f"{name_exp_fig}", fontsize=14, fontweight='bold')
     plt.figtext(0.5, 0.01, f"MAE: {m_:.3f}, PSNR: {p_:.3f}, SSIM: {s_:.3f}", ha="center", fontsize=14)
@@ -140,7 +154,7 @@ stats_fi = "{0},{1:.6f},{2:.6f},{3:.6f}".format(name_exp, \
 
 dict = {name_exp + "avg_fim" : stats_fi}
 
-w = csv.writer(open("{0}/{1}_Test_stats_img_complete.csv".format(path_met, name_exp), "a"))
+w = csv.writer(open("{0}/{1}_Test_Mask_stats_img_complete.csv".format(path_met, name_exp), "a"))
     
 for key, val in dict.items(): w.writerow([key, val]) #"""
 print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(name_exp))
