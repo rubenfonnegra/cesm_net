@@ -158,24 +158,30 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
         out_dir = output_dir+"imgs_completa/" if (img_complete) else output_dir+"imgs_parches/"
         os.makedirs(out_dir, exist_ok = True)
         
-        if args.model != "UNet":
+        if args.type_model == "Attention":
             out_dir_attn = output_dir+"attn_maps/"+"imgs_completa/" if (img_complete) else output_dir+"attn_maps/"+"imgs_parches/"
         
         m_fi, s_fi, p_fi = [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
             
-            if True: # try:
+            if True:
+
                 img = dataloader_[int(l)]
                 real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
                 real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-                fake_out = generator(real_in)
-                #fake_out, dictOutput = generator(real_in)
-                # os.makedirs(out_dir_attn+str(l), exist_ok = True)
-                # for key, value in dictOutput.items():
-                #     value = value.cpu().detach().numpy()
-                #     np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
+                if(args.type_model == "Attention"):
+
+                    fake_out, dictOutput = generator(real_in)
+
+                    os.makedirs(out_dir_attn+str(l), exist_ok = True)
+                    for key, value in dictOutput.items():
+                        value = value.cpu().detach().numpy()
+                        np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
+                
+                else:
+                    fake_out = generator(real_in)
 
                 if difference:
                     diffmap = abs(real_out.data - fake_out.data) 
@@ -232,12 +238,15 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
         m_fi, s_fi, p_fi= [], [], []
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
+            
             img = dataloader.test_img_complete_generator[int(l)]
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
             
-            #fake_out, _ = generator(real_in)
-            fake_out = generator(real_in)
+            if(args.type_model == "Attention"):
+                fake_out, _ = generator(real_in)
+            else:
+                fake_out = generator(real_in)
 
             if difference:
                 diffmap = abs(real_out.data - fake_out.data) 
