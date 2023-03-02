@@ -310,4 +310,44 @@ for subset in subsets:
     
 #     save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
 
+    # def crop_images(self, sample):
+
+    #     im_input_  = Image.open(self.files[sample]).convert("F")
+    #     im_output_ = Image.open(self.targs[sample]).convert("F")
+    #     im_input_   = np.asarray(im_input_)
+    #     im_output_  = np.asarray(im_output_)
+
+    #     max_heigth = []
+    #     max_widht = []
+
+    #     for j in range( im_input_.shape[1]):
+            
+    #         if(( im_input_[:,j] != 0.).any() ):
+    #             max_widht.append(j)
+                
+        
+    #     for j in range( im_input_.shape[0]):
+
+    #         if(( im_input_[j,:] != 0.).any() ):
+    #             max_heigth.append(j)                        
+    
+    #     if ( (im_input_[:, 0] != 0.).any() ):
+
+    #         max_widht = max_widht[-1]
+    #         im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+    #         im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+        
+    #     else:
+    #         max_widht = max_widht[0]
+    #         im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
+    #         im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
+
+    #     im_input_   = resize(im_input_, (256, 256) )
+    #     im_output_  = resize(im_output_, (256, 256) )
+        
+    #     im_input_   = torch.from_numpy(im_input_[np.newaxis,...])
+    #     im_output_  = torch.from_numpy(im_output_[np.newaxis,...])
+
+    #     return im_input_, im_output_
+
 

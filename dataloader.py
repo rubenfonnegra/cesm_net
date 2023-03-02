@@ -99,7 +99,6 @@ class ValImageDataset(Dataset):
                  shuffle = True,
                  format = "png", num_workers = 10, 
                  transforms_=None, name="cesm",
-                 crop_train = False, crop_test = False,
                  **kwargs):
         #
         'Initialization'
@@ -112,8 +111,6 @@ class ValImageDataset(Dataset):
         self.shuffle        = shuffle
         self.name           = name
         self.num_workers    = num_workers
-        self.crop_train     = crop_train
-        self.crop_test      = crop_test
         
         files = natsorted(glob.glob(f"{inputs}/*.{format}") , alg=ns.PATH)
         targs = natsorted(glob.glob(f"{outputs}/*.{format}"), alg=ns.PATH)
@@ -161,14 +158,10 @@ class ValImageDataset(Dataset):
             for i, idx in enumerate(range(*index.indices(len(self)))): 
                 sample = idx % len(self.files)
                 
-                #if self.name == "cesm":
-                if self.crop_train:
-                    im_input_, im_output_ = self.crop_images(sample)
-                else:
-                    im_input_  = Image.open(self.files[sample]).convert("F")
-                    im_output_ = Image.open(self.targs[sample]).convert("F")
-                    im_input_  = self.transforms(im_input_)
-                    im_output_ = self.transforms(im_output_)
+                im_input_  = Image.open(self.files[sample]).convert("F")
+                im_output_ = Image.open(self.targs[sample]).convert("F")
+                im_input_  = self.transforms(im_input_)
+                im_output_ = self.transforms(im_output_)
                 
                 batch_input_[i] = im_input_; batch_output_[i] = im_output_
                 
@@ -177,52 +170,12 @@ class ValImageDataset(Dataset):
     def __len__(self):
         return len(self.files)
     
-    def crop_images(self, sample):
-
-        im_input_  = Image.open(self.files[sample]).convert("F")
-        im_output_ = Image.open(self.targs[sample]).convert("F")
-        im_input_   = np.asarray(im_input_)
-        im_output_  = np.asarray(im_output_)
-
-        max_heigth = []
-        max_widht = []
-
-        for j in range( im_input_.shape[1]):
-            
-            if(( im_input_[:,j] != 0.).any() ):
-                max_widht.append(j)
-                
-        
-        for j in range( im_input_.shape[0]):
-
-            if(( im_input_[j,:] != 0.).any() ):
-                max_heigth.append(j)                        
-    
-        if ( (im_input_[:, 0] != 0.).any() ):
-
-            max_widht = max_widht[-1]
-            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-        
-        else:
-            max_widht = max_widht[0]
-            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
-            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
-
-        im_input_   = resize(im_input_, (256, 256) )
-        im_output_  = resize(im_output_, (256, 256) )
-        
-        im_input_   = torch.from_numpy(im_input_[np.newaxis,...])
-        im_output_  = torch.from_numpy(im_output_[np.newaxis,...])
-
-        return im_input_, im_output_
-
 
 class Loader():
     def __init__(self, data_path, proj, 
                  batch_size=50, dataset_name = "cesm", format = "png", num_workers = 10,
                  img_res=(128, 128), transforms = None, n_channels = 3, img_complete = True,
-                 crop_train = False, crop_test = False, **kwargs):
+                 **kwargs):
 
         self.data_path      = data_path        
         self.batch_size     = batch_size
@@ -234,22 +187,15 @@ class Loader():
         self.proj           = proj
         self.num_workers    = num_workers
         self.img_complete   = img_complete
-        self.crop_train     = crop_train
-        self.crop_test      = crop_test
         
-        if dataset_name.lower() == "cesm":
-            train_i = data_path + "/LE/train/"
-            train_o = data_path + "/RC/train/"
-            test_i  = data_path + "/LE/test/"
-            test_o  = data_path + "/RC/test/"
+        train_i = data_path + "/LE/train/"
+        train_o = data_path + "/RC/train/"
+        test_i  = data_path + "/LE/test/"
+        test_o  = data_path + "/RC/test/"
+        
+        if not(self.img_complete):
             val_i   = data_path + "/LE/val/"
             val_o   = data_path + "/RC/val/"
-
-        elif dataset_name.lower() == "cdd-cesm":
-            train_i = data_path + "/LE/train/"
-            train_o = data_path + "/SI/train/"
-            test_i  = data_path + "/LE/test/"
-            test_o  = data_path + "/SI/test/"
 
         else: 
             raise NotImplementedError (dataset_name, "Database not implemented")
@@ -259,15 +205,13 @@ class Loader():
                                                 name=self.dataset_name, format=self.format,
                                                 batch_size=batch_size, num_workers = self.num_workers, 
                                                 image_size=img_res, n_channels=n_channels, 
-                                                shuffle = True, transforms_ = self.transforms,
-                                                crop_train= self.crop_train, crop_test = self.crop_test)
+                                                shuffle = True, transforms_ = self.transforms)
                         
-            self.test_img_complete_generator  = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+            self.test_generator  = ValImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                     name=self.dataset_name, format=self.format,
                                                     batch_size=batch_size, num_workers = self.num_workers, 
                                                     image_size=img_res, n_channels=n_channels, 
-                                                    shuffle = True, transforms_ = self.transforms,
-                                                    crop_train= self.crop_train, crop_test = self.crop_test)
+                                                    shuffle = True, transforms_ = self.transforms)
 
         else:
             self.train_generator = ImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,
@@ -276,13 +220,13 @@ class Loader():
                                                 image_size=img_res, n_channels=n_channels, 
                                                 shuffle = True, transforms_ = self.transforms)
 
-            self.test_patch_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
+            self.test_generator = ImageDataset ( inputs = test_i, outputs = test_o, proj = self.proj,
                                                     name=self.dataset_name, format=self.format,
                                                     batch_size=batch_size, num_workers = self.num_workers, 
                                                     image_size=img_res, n_channels=n_channels, 
                                                     shuffle = True, transforms_ = self.transforms)
             
-            self.test_img_complete_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
+            self.val_generator  = ValImageDataset ( inputs = val_i, outputs = val_o, proj = self.proj,
                                                     name=self.dataset_name, format=self.format,
                                                     batch_size=batch_size, num_workers = self.num_workers, 
                                                     image_size=img_res, n_channels=n_channels, 
