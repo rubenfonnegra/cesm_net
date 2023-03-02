@@ -58,9 +58,8 @@ class ImageDataset(Dataset):
         if isinstance( index, int ) :
             sample = index % len(self.files)
 
-            if self.name == "cesm":
-                im_input_  = Image.open(self.files[sample]).convert("F")
-                im_output_ = Image.open(self.targs[sample]).convert("F")
+            im_input_  = Image.open(self.files[sample]).convert("F")
+            im_output_ = Image.open(self.targs[sample]).convert("F")
             
             im_input_  = self.transforms(im_input_)
             im_output_ = self.transforms(im_output_)
@@ -73,12 +72,11 @@ class ImageDataset(Dataset):
             for i, idx in enumerate(range(*index.indices(len(self)))): 
                 sample = idx % len(self.files)
                 
-                if self.name == "cesm":
-                    im_input_  = Image.open(self.files[sample]).convert("F")
-                    im_output_ = Image.open(self.targs[sample]).convert("F")
-                    if np.array(im_output_).min()==0 and np.array(im_output_).max()==0:
-                        im_input_  = Image.open(self.files[sample-1]).convert("F")
-                        im_output_ = Image.open(self.targs[sample-1]).convert("F")
+                im_input_  = Image.open(self.files[sample]).convert("F")
+                im_output_ = Image.open(self.targs[sample]).convert("F")
+                if np.array(im_output_).min()==0 and np.array(im_output_).max()==0:
+                    im_input_  = Image.open(self.files[sample-1]).convert("F")
+                    im_output_ = Image.open(self.targs[sample-1]).convert("F")
 
                 im_input_  = self.transforms(im_input_)
                 im_output_ = self.transforms(im_output_)
@@ -139,14 +137,10 @@ class ValImageDataset(Dataset):
         if isinstance( index, int ) :
             sample = index % len(self.files)
             
-            #if self.name == "cesm":
-            if self.crop_test:
-                im_input_, im_output_ = self.crop_images(sample)
-            else:
-                im_input_  = Image.open(self.files[sample]).convert("F")
-                im_output_ = Image.open(self.targs[sample]).convert("F")
-                im_input_  = self.transforms(im_input_)
-                im_output_ = self.transforms(im_output_)
+            im_input_  = Image.open(self.files[sample]).convert("F")
+            im_output_ = Image.open(self.targs[sample]).convert("F")
+            im_input_  = self.transforms(im_input_)
+            im_output_ = self.transforms(im_output_)
             
             return {"in": im_input_, "out": im_output_}
 
@@ -197,8 +191,6 @@ class Loader():
             val_i   = data_path + "/LE/val/"
             val_o   = data_path + "/RC/val/"
 
-        else: 
-            raise NotImplementedError (dataset_name, "Database not implemented")
         
         if self.img_complete:
             self.train_generator = ValImageDataset(inputs = train_i, outputs = train_o, proj = self.proj,

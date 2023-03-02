@@ -140,7 +140,7 @@ def save_configs (args):
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
                                output_dir = None, write_log = False, img_complete = True):
     
-        dataloader_ = dataloader.test_img_complete_generator if (img_complete) else dataloader.test_patch_generator
+        dataloader_ = dataloader.val_generator if (img_complete) else dataloader.test_generator
         
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
@@ -221,16 +221,23 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
 ##
 ## Image saving during training
 ## 
-def sample_images(args, dataloader, generator, epoch, difference = True, output_dir = None, shuffled = True, write_log = False):
+def sample_images(args, dataloader, generator, epoch, difference = True, output_dir = None, shuffled = True, write_log = False, img_complete=True):
         #
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
 
-        if output_dir == None: 
-            output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
-
-        if shuffled: 
-            lucky = np.random.randint(0, len(dataloader.test_img_complete_generator), args.sample_size)
+        if output_dir == None:
+            if(img_complete): 
+                output_dir = "%s/images/ep%s/image_complete" % (args.result_dir, epoch)
+            else:
+                output_dir = "%s/images/ep%s/patches" % (args.result_dir, epoch)
+                
+        if shuffled:
+            if(img_complete): 
+                lucky = np.random.randint(0, len(dataloader.val_generator), args.sample_size)
+            else:
+                lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+        
         else: 
             lucky = np.arange(0, args.sample_size)
         
@@ -239,7 +246,11 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
 
         for k, l in tqdm(enumerate(lucky), ncols=100):
             
-            img = dataloader.test_img_complete_generator[int(l)]
+            if(img_complete):
+                img = dataloader.val_generator[int(l)]
+            else:
+                img = dataloader.test_generator[int(l)]
+                
             real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
             real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
             

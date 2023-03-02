@@ -15,10 +15,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 parser = argparse.ArgumentParser(description= "Training GANs using CA loss")
     
 # Configs  
-parser.add_argument("--name_exp", type=str, default="", help="name of the experiment")
-parser.add_argument("--name_exp_fig", type=str, default="", help="name of the experiment in the fig")
-parser.add_argument("--path_results", type=str, default="Results/", help="Results path")
-parser.add_argument("--path_data", type=str, default="/media/mirplab/TB2/Experiments-Mammography/01_Data/data_img_complete/", help="Data path")
+parser.add_argument("--name_exp", type=str, default="Unet-Not-Deep-Image-Complete-CC-Step-lr", help="name of the experiment")
+parser.add_argument("--name_exp_fig", type=str, default="Unet Deep Image Complete CC", help="name of the experiment in the fig")
+parser.add_argument("--path_results", type=str, default="Results/07-Unet-Based/", help="Results path")
+parser.add_argument("--path_data", type=str, default="Data/cesm_patches/data_img_complete/", help="Data path")
 parser.add_argument("--projection", type=str, default="CC")
 parser.add_argument("--format", type=str, default="tif")
 parser.add_argument("--workers", type=int, default=12)
@@ -26,9 +26,9 @@ parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--image_size", type=int, default=256)
 parser.add_argument("--channels", type=int, default=1)
 parser.add_argument("--dataset_name", type=str, default="cesm")
-parser.add_argument("--model", type=str, default="UNet")
+parser.add_argument("--model", type=str, default="UNet_Not_Deep")
 parser.add_argument("--type_model", type=str, default="UNet")
-parser.add_argument("--epoch", type=int, default=400)
+parser.add_argument("--epoch", type=int, default=600)
 args = parser.parse_args()
 
 name_exp        = args.name_exp
@@ -41,7 +41,6 @@ workers         = args.workers
 batch_size      = args.batch_size
 image_size      = args.image_size
 channels        = args.channels
-dataset_name    = "cesm"
 model           = args.model
 type_model      = args.type_model
 epoch           = args.epoch
@@ -62,13 +61,13 @@ transforms_ = [
 
 data_loader = Loader ( data_path = path_data, proj = projection, format = format, num_workers = workers,
                            batch_size = batch_size, img_res=(image_size, image_size), n_channels = channels,
-                           transforms = transforms_, dataset_name = dataset_name, img_complete = True)
+                           transforms = transforms_, img_complete = True)
 
-data_loader = data_loader.test_img_complete_generator
+data_loader = data_loader.test_generator
 
 # Initialize generator and discriminator
 if(args.model == "UNet_Deep"):
-        generator = UNet_Generator_Deep(in_channels = args.channels)
+    generator = UNet_Generator_Deep(in_channels = args.channels)
 elif(args.model == "UNet_Not_Deep"):
     generator = UNet_Generator_Not_Deep(in_channels= args.channels)
 elif(args.model == "Residual-PA-Unet"):
@@ -82,7 +81,7 @@ generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"
 print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', f'G_chkp_{epoch}.pth')}")
 
 generator.cuda()
-lucky = np.arange(0, 20)
+lucky = range(0, len(data_loader))
 
 m_fi, s_fi, p_fi = [], [], []
 
@@ -113,16 +112,16 @@ for k, l in tqdm(enumerate(lucky), ncols=100):
     m_, s_, p_      = pixel_metrics(real_out_mask, fake_out_mask)
     m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
 
-    fig, axes = plt.subplots(3, 2, figsize=(24,6))
+    fig, axes = plt.subplots(3, 2, figsize=(6,10))
 
     axes[0,0].imshow(real_out, cmap="gray", vmin=0, vmax=1)
     axes[0,0].set_title("Recombined")
     axes[0,1].imshow(fake_out, cmap="gray", vmin=0, vmax=1)
     axes[0,1].set_title("Recombined Generated")
-    axes[1,0].imshow(fake_out_mask, cmap="gray", vmin=0, vmax=1)
-    axes[1,0].set_title("Recombined Generated Mask")
-    axes[1,1].imshow(real_out_mask, cmap="gray", vmin=0, vmax=1)
-    axes[1,1].set_title("Recombined Real Mask")
+    axes[1,0].imshow(real_out_mask, cmap="gray", vmin=0, vmax=1)
+    axes[1,0].set_title("Recombined Real Mask")
+    axes[1,1].imshow(fake_out_mask, cmap="gray", vmin=0, vmax=1)
+    axes[1,1].set_title("Recombined Generated Mask")
 
     axes[2,0].set_title("Difference Map")
     axes[2,1].set_title("Difference Map Mask")
@@ -141,8 +140,8 @@ for k, l in tqdm(enumerate(lucky), ncols=100):
     plt.figtext(0.5, 0.01, f"MAE: {m_:.3f}, PSNR: {p_:.3f}, SSIM: {s_:.3f}", ha="center", fontsize=14)
 
     for ax in axes.ravel(): ax.set_axis_off()
-    plt.tight_layout(pad=0.5)
-    plt.subplots_adjust(hspace=.5)
+    plt.tight_layout(pad=0.2)
+    plt.subplots_adjust(hspace=.001,wspace=0.2)
 
     fig = plt.gcf()
     fig = fig2img(fig)

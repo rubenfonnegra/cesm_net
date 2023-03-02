@@ -39,7 +39,7 @@ def setup_configs(args):
     
     args.cuda = True if torch.cuda.is_available() else False
 
-def run_model(args): 
+def run_model(args):
     
     # Initialize generator and discriminator
     if(args.model == "UNet_Deep"):
@@ -317,7 +317,14 @@ def run_model(args):
 
         # If at sample interval save image
         if epoch % args.sample_interval == 0:
-            sample_images(args, data_loader, generator, epoch)
+            
+            if(args.img_complete):
+                sample_images(args, data_loader, generator, epoch, img_complete= True)
+            else:
+                sample_images(args, data_loader, generator, epoch, img_complete= True)
+                sample_images(args, data_loader, generator, epoch, img_complete= False)
+                
+                
         
     
     print ("\n [✓] -> Done! \n\n")
