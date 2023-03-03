@@ -341,21 +341,21 @@ class Residual_PA_UNet_Generator(nn.Module):
         self.RPA3   = Residual_PA_block_2(128,128)
         self.DS3    = DS_block(128,256)
         self.RPA4   = Residual_PA_block_2(256, 256)
-        self.DS4    = DS_block(256,256)
+        self.DS4    = DS_block(256,512)
 
         """ Fusion Block """
         self.convFusion = nn.Conv2d(
-            in_channels     = 256,
-            out_channels    = 256,
+            in_channels     = 512,
+            out_channels    = 512,
             kernel_size     = 3,
             stride          = 1,
             padding         = 'same'
         )
-        self.batchnormFusion = nn.BatchNorm2d(256, momentum=0.8)
+        self.batchnormFusion = nn.BatchNorm2d(512, momentum=0.8)
         self.reluFusion = nn.ReLU()
 
         """ Upsampling Block"""
-        self.US1 = US_block( 256, 256 )
+        self.US1 = US_block( 512, 256 )
         self.RPA5 = Residual_PA_block_2( 256, 256 )
         self.US2 = US_block( 256, 128 )
         self.RPA6 = Residual_PA_block_2( 128, 128 )
@@ -378,30 +378,30 @@ class Residual_PA_UNet_Generator(nn.Module):
     def forward(self, img_input):
         
         """ DownSampling Block Forward """
-        outConvInit         = self.convInput(img_input)
-        outRPA1, attn1      = self.RPA1(outConvInit)
-        outDS               = self.DS1(outRPA1)
-        outRPA2, attn2      = self.RPA2(outDS)
-        outDS               = self.DS2(outRPA2)
-        outRPA3, attn3      = self.RPA3(outDS)
-        outDS               = self.DS3(outRPA3)
-        outRPA4, attn4      = self.RPA4(outDS)
-        outDS               = self.DS4(outRPA4)
+        outConvInit         = self.convInput(img_input)     # (B, 32, 256, 256)
+        outRPA1, attn1      = self.RPA1(outConvInit)        # (B, 32, 256, 256)
+        outDS               = self.DS1(outRPA1)             # (B, 64, 128, 128)
+        outRPA2, attn2      = self.RPA2(outDS)              # (B, 64, 128, 128)
+        outDS               = self.DS2(outRPA2)             # (B, 128, 64, 64)
+        outRPA3, attn3      = self.RPA3(outDS)              # (B, 128, 64, 64)
+        outDS               = self.DS3(outRPA3)             # (B, 256, 32, 32)
+        outRPA4, attn4      = self.RPA4(outDS)              # (B, 256, 32, 32)
+        outDS               = self.DS4(outRPA4)             # (B, 512, 16, 16)
 
         """ Fusion Block Forward """
-        out = self.convFusion(outDS)
-        out = self.batchnormFusion(out)
-        out = self.reluFusion(out)
+        out = self.convFusion(outDS)                        # (B, 512, 16, 16)
+        out = self.batchnormFusion(out)                     # (B, 512, 16, 16)
+        out = self.reluFusion(out)                          # (B, 512, 16, 16)
 
         """ Upsampling Block Forward """
-        out         = self.US1( out, outRPA4 )
-        out, attn5  = self.RPA5( out )
-        out         = self.US2( out, outRPA3 )
-        out, attn6  = self.RPA6( out )
-        out         = self.US3(out, outRPA2 )
-        out, attn7  = self.RPA7(out)
-        out         = self.US4( out, outRPA1 )
-        out, attn8  = self.RPA8(out)
+        out         = self.US1( out, outRPA4 )              # (B, 256, 32, 32)
+        out, attn5  = self.RPA5( out )                      # (B, 256, 32, 32)
+        out         = self.US2( out, outRPA3 )              # (B, 128, 64, 64)
+        out, attn6  = self.RPA6( out )                      # (B, 128, 64, 64)
+        out         = self.US3(out, outRPA2 )               # (B, 64, 128, 128)
+        out, attn7  = self.RPA7(out)                        # (B, 64, 128, 128)
+        out         = self.US4( out, outRPA1 )              # (B, 32, 256, 256)
+        out, attn8  = self.RPA8(out)                        # (B, 32, 256, 256)
 
         """ Output Convolution """
         out = self.convOut(out)
