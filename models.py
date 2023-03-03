@@ -241,35 +241,39 @@ class Residual_PA_UNet_Generator(nn.Module):
         )
 
         """ DownSampling Block """
-        self.RPA1   = Residual_PA_block( 32, 32)
+        self.RB1    = R_block( 32, 32)
         self.DS1    = DS_block(32,64)
-        self.RPA2   = Residual_PA_block(64,64)
+        self.RPA1   = Residual_PA_block(64,64)
         self.DS2    = DS_block(64,128)
-        self.RPA3   = Residual_PA_block(128,128)
+        self.RPA2   = Residual_PA_block(128,128)
         self.DS3    = DS_block(128,256)
-        # self.RPA4   = Residual_PA_block(256, 256)
-        # self.DS4    = DS_block(256,256)
+        self.RPA3   = Residual_PA_block(256, 256)
+        self.DS4    = DS_block(256,512)
+        self.RPA4   = Residual_PA_block(512, 512)
+        self.DS5    = DS_block(512,1024)
 
         """ Fusion Block """
         self.convFusion = nn.Conv2d(
-            in_channels     = 512,
-            out_channels    = 512,
+            in_channels     = 1024,
+            out_channels    = 1024,
             kernel_size     = 3,
             stride          = 1,
             padding         = 'same'
         )
-        self.batchnormFusion = nn.BatchNorm2d(512, momentum=0.8)
+        self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
         self.reluFusion = nn.ReLU()
 
         """ Upsampling Block"""
-        self.US1 = US_block( 256, 128 )
-        self.RPA4 = Residual_PA_block( 128, 128 )
-        self.US2 = US_block( 128, 64 )
-        self.RPA5 = Residual_PA_block( 64, 64 )
-        self.US3 = US_block( 64, 32 )
-        self.RPA6 = Residual_PA_block( 32, 32 )
-        # self.US4 = US_block( 64, 32 )
-        # self.RPA8 = Residual_PA_block( 32, 32 )
+        self.US1 = US_block(1024, 512)
+        self.RB2 = R_block( 512, 512 )
+        self.US2 = US_block( 512, 256 )
+        self.RB3 = R_block( 256, 256 )
+        self.US3 = US_block( 256, 128 )
+        self.RB4 = R_block( 128, 128 )
+        self.US4 = US_block( 128, 64 )
+        self.RB5 = R_block( 64, 64 )
+        self.US5 = US_block( 64, 32 )
+        self.RB6 = R_block( 32, 32 )
         
         """ Output Convolutional """
         self.convOut = nn.Conv2d(
@@ -286,29 +290,33 @@ class Residual_PA_UNet_Generator(nn.Module):
         
         """ DownSampling Block Forward """
         outConvInit         = self.convInput(img_input)     # (B, 32, 256, 256)
-        outRPA1, attn1      = self.RPA1(outConvInit)        # (B, 32, 256, 256)
-        outDS               = self.DS1(outRPA1)             # (B, 64, 128, 128)
-        outRPA2, attn2      = self.RPA2(outDS)              # (B, 64, 128, 128)
-        outDS               = self.DS2(outRPA2)             # (B, 128, 64, 64)
-        outRPA3, attn3      = self.RPA3(outDS)              # (B, 128, 64, 64)
-        outDS               = self.DS3(outRPA3)             # (B, 256, 32, 32)
-        # outRPA4, attn4      = self.RPA4(outDS)
-        # outDS               = self.DS4(outRPA4)
+        outRB1              = self.RB1(outConvInit)         # (B, 32, 256, 256)
+        outDS               = self.DS1(outRB1)              # (B, 64, 128, 128)
+        outRPA1, attn1      = self.RPA1(outDS)              # (B, 64, 128, 128)
+        outDS               = self.DS2(outRPA1)             # (B, 128, 64, 64)
+        outRPA2, attn2      = self.RPA2(outDS)              # (B, 128, 64, 64)
+        outDS               = self.DS3(outRPA2)             # (B, 256, 32, 32)
+        outRPA3, attn3      = self.RPA3(outDS)              # (B, 256, 32, 32)
+        outDS               = self.DS4(outRPA3)             # (B, 512, 16, 16)
+        outRPA4, attn4      = self.RPA4(outDS)              # (B, 512, 16, 16)
+        outDS               = self.DS5(outRPA4)             # (B, 1024, 8, 8)
 
         """ Fusion Block Forward """
-        out = self.convFusion(outDS)                        # (B, 256, 32, 32)
-        out = self.batchnormFusion(out)                     # (B, 256, 32, 32)
-        out = self.reluFusion(out)                          # (B, 256, 32, 32)
+        out = self.convFusion(outDS)                        # (B, 1024, 8, 8)
+        out = self.batchnormFusion(out)                     # (B, 1024, 8, 8)
+        out = self.reluFusion(out)                          # (B, 1024, 8, 8)
 
         """ Upsampling Block Forward """
-        out         = self.US1( out, outRPA3 )              # (B, 128, 64, 64)
-        out, attn4  = self.RPA4( out )                      # (B, 128, 64, 64)
-        out         = self.US2( out, outRPA2 )              # (B, 64, 128, 128)
-        out, attn5  = self.RPA5( out )                      # (B, 64, 128, 128)
-        out         = self.US3(out, outRPA1 )               # (B, 32, 256, 256)
-        out, attn6  = self.RPA6(out)                        # (B, 32, 256, 256)
-        # out         = self.US4( out, outRPA1 )
-        # out, attn8  = self.RPA8(out)
+        out         = self.US1( out, outRPA4 )              # (B, 512, 16, 16)
+        out         = self.RB2( out )                       # (B, 512, 16, 16)
+        out         = self.US2( out, outRPA3 )              # (B, 256, 32, 32)
+        out         = self.RB3( out )                       # (B, 256, 32, 32)
+        out         = self.US3(out, outRPA2 )               # (B, 128, 64, 64)
+        out         = self.RB4(out)                         # (B, 128, 64, 64)
+        out         = self.US4(out, outRPA1 )               # (B, 64, 128, 128)
+        out         = self.RB5(out)                         # (B, 64, 128, 128)
+        out         = self.US5(out, outRB1 )                # (B, 32, 256, 256)
+        out         = self.RB6(out)                         # (B, 32, 256, 256)
 
         """ Output Convolution """
         out = self.convOut(out)
@@ -321,10 +329,6 @@ class Residual_PA_UNet_Generator(nn.Module):
             "attn2": attn2,
             "attn3": attn3,
             "attn4": attn4,
-            "attn5": attn5,
-            "attn6": attn6,
-            # "attn7": attn7,
-            # "attn8": attn8,
             "output_image": out,
         }
 

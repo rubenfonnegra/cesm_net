@@ -182,7 +182,7 @@ def run_model(args):
 
             optimizer_G.zero_grad()
 
-            if (args.type_model == "Attention"):
+            if (args.type_model == "attention"):
                 fake_out, _ = generator(real_in)
             else:
                 fake_out    = generator(real_in)
@@ -293,7 +293,7 @@ def run_model(args):
                     'Avg_Ep/G_Pixel_Loss': avg_logs[3]
                 }
                     
-            wandb.log(data, step=epoch)
+            wandb.log(data)
 
         # Shuffle train data everything
         data_loader.on_epoch_end(shuffle = "train")
