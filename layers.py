@@ -96,46 +96,9 @@ class PixelAttention(nn.Module):
         return out, attn_maps
 
 """
----------- Implementation of Residual Block Option 1-----------
+---------- Implementation of Residual Block -----------
 """
-class Residual_PA_block_1(nn.Module):
-
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-
-        self.R_block_layer = nn.Sequential(
-            nn.Conv2d(
-                in_channels     = in_channels,
-                out_channels    = out_channels,
-                kernel_size     = 3,
-                stride          = 1,
-                padding         = 'same'
-            ),
-            
-            nn.ReLU(),
-            
-            nn.Conv2d(
-                in_channels     = in_channels,
-                out_channels    = out_channels,
-                kernel_size     = 3,
-                stride          = 1,
-                padding         = 'same'
-            )
-        )
-        
-        self.pixelAttention = PixelAttention(out_channels)
-    
-    def forward(self, input_layer ):
-
-        out = self.R_block_layer( input_layer )
-        out, attn = self.pixelAttention(out)
-        out = torch.add(out, input_layer)
-        return out, attn
-
-"""
----------- Implementation of Residual Block Option 2-----------
-"""
-class Residual_PA_block_2(nn.Module):
+class Residual_PA_block(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
