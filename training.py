@@ -57,11 +57,7 @@ def run_model(args):
     if args.generate:
         discriminator = None
         to_cuda = [generator]
-    
-    elif args.type_model != "GAN":
-        to_cuda = [generator]
-        discriminator = None 
-    
+        
     elif args.type_model == "GAN":
 
         # Create D
@@ -137,10 +133,9 @@ def run_model(args):
         exit()
     
 
-    # Optimizer and Sheduler
+    # Optimizer
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
-    sheduler    = StepLR( optimizer= optimizer_G, step_size=200, gamma=0.1)
-    
+        
     if args.type_model == "GAN": 
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
 
@@ -209,7 +204,6 @@ def run_model(args):
             
             loss_G.backward()
             optimizer_G.step()
-            sheduler.step()
 
             # ------------------------------------
             #          Train Discriminator
@@ -248,7 +242,7 @@ def run_model(args):
 
                 # Print log
                 sys.stdout.write(
-                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
+                    "\r[Epoch %d/%d][Batch %d/%d][D loss: %f][G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
                     % (
                         epoch,
                         args.n_epochs,
@@ -299,7 +293,7 @@ def run_model(args):
                     'Avg_Ep/G_Pixel_Loss': avg_logs[3]
                 }
                     
-            wandb.log(data)
+            wandb.log(data, epoch=epoch)
 
         # Shuffle train data everything
         data_loader.on_epoch_end(shuffle = "train")
@@ -314,10 +308,10 @@ def run_model(args):
         # If at sample interval save image
         if epoch % args.sample_interval == 0:
             
-            if(args.img_complete):
-                sample_images(args, data_loader, generator, epoch, img_complete= True)
-            else:
+            if(not(args.img_complete)):
                 sample_images(args, data_loader, generator, epoch, img_complete= False)
+            else:
+                sample_images(args, data_loader, generator, epoch, img_complete = True)
                 
                 
         

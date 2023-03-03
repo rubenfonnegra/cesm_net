@@ -140,11 +140,10 @@ def save_configs (args):
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
                                output_dir = None, write_log = False, img_complete = True):
     
-        dataloader_ = dataloader.val_generator if (img_complete) else dataloader.test_generator
+        dataloader_ = dataloader.test_generator if (img_complete) else dataloader.val_generator
         
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
-        ce_m = torch.nn.L1Loss()
         difference = True
 
         if output_dir == None: 
@@ -222,63 +221,96 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
 ## Image saving during training
 ## 
 def sample_images(args, dataloader, generator, epoch, difference = True, output_dir = None, shuffled = True, write_log = False, img_complete=False):
-        #
-        """Saves a generated sample from the validation set"""
-        Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
 
         if output_dir == None:
-            if(args.img_complete): 
-                output_dir = "%s/images/ep%s/image_complete" % (args.result_dir, epoch)
+            if(img_complete): 
+                output_dir_c = "%s/images/ep%s/image_complete" % (args.result_dir, epoch)
             else:
-                output_dir = "%s/images/ep%s/patches" % (args.result_dir, epoch)
+                output_dir_p = "%s/images/ep%s/patches" % (args.result_dir, epoch)
                 
         if shuffled:
-            if(args.img_complete): 
-                lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+            if(not(img_complete)): 
+                lucky_c = np.random.randint(0, len(dataloader.val_generator), args.sample_size)
+                lucky_p = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
             else:
-                lucky = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
+                lucky_c = np.random.randint(0, len(dataloader.test_generator), args.sample_size)
         
         else: 
-            lucky = np.arange(0, args.sample_size)
+            if(not(img_complete)): 
+                lucky_c = np.arange(0, args.sample_size)
+                lucky_p = np.arange(0, args.sample_size)
+            else:
+                lucky_c = np.arange(0, args.sample_size)
         
-        os.makedirs(output_dir, exist_ok = True)
-        m_fi, s_fi, p_fi= [], [], []
-
-        for k, l in tqdm(enumerate(lucky), ncols=100):
+        if(not(img_complete)):
             
-            if(img_complete):
-                img = dataloader.test_generator[int(l)]
-            else:
-                img = dataloader.test_generator[int(l)]
-                
-            real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
-            real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
-            
-            if(args.type_model == "Attention"):
-                fake_out, _ = generator(real_in)
-            else:
-                fake_out = generator(real_in)
+            """ Plot and save pathes"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_p,
+                      dataloader    = dataloader.test_generator,
+                      output_dir    = output_dir_p,
+                      generator     = generator,
+                      difference    = True)
 
-            if difference:
-                diffmap = abs(real_out.data - fake_out.data) 
-                img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
-                diffmaps = [diffmap.cpu().numpy()]
-                save_images(img_sample, output_dir = output_dir + "%s.png" % (k), \
-                           diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
-                
-                ##---- Metrics -----
-                m_, s_, p_ = pixel_metrics((real_out.data.cpu().numpy()+1)/2, (fake_out.data.cpu().numpy()+1)/2)
-                m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
-
-            else:
-                img_sample = torch.cat((real_in.data, real_out.data, fake_out.data), -1)
-                save_image(img_sample, output_dir + "%s.png" % (k), normalize=True)
+            """ Plot and save images complete"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_c,
+                      dataloader    = dataloader.val_generator,
+                      output_dir    = output_dir_c,
+                      generator     = generator,
+                      difference    = True)
         
-        if write_log == True: 
-            #"""
-            stats_fi = "{0:.4f}, {1:.4f}, {2:.4f}".format(np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
-            dict = {args.exp_name + "," : stats_fi }
-            w = csv.writer(open("Results/{0}_stats.csv".format(args.exp_name), "a"))
-            for key, val in dict.items(): w.writerow([key, val]) #"""
-            print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
+        else:
+            
+            """ Plot and save images complete"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_c,
+                      dataloader    = dataloader.test_generator,
+                      output_dir    = output_dir_c,
+                      generator     = generator,
+                      difference    = True)
+
+def plot_imgs(args, lucky, dataloader, output_dir, generator, difference):
+    
+    """Saves a generated sample from the validation set"""
+    Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
+    os.makedirs(output_dir, exist_ok = True)
+    
+    m_fi, s_fi, p_fi= [], [], []
+
+    for k, l in tqdm(enumerate(lucky), ncols=100):
+        
+        img = dataloader[int(l)]
+
+            
+        real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
+        real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
+        
+        if(args.type_model == "Attention"):
+            fake_out, _ = generator(real_in)
+        else:
+            fake_out = generator(real_in)
+
+        if difference:
+            diffmap = abs(real_out.data - fake_out.data) 
+            img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
+            diffmaps = [diffmap.cpu().numpy()]
+            save_images(img_sample, output_dir = output_dir + "%s.png" % (k), \
+                        diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
+            
+            ##---- Metrics -----
+            m_, s_, p_ = pixel_metrics((real_out.data.cpu().numpy()+1)/2, (fake_out.data.cpu().numpy()+1)/2)
+            m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
+
+        else:
+            img_sample = torch.cat((real_in.data, real_out.data, fake_out.data), -1)
+            save_image(img_sample, output_dir + "%s.png" % (k), normalize=True)
+
+# if write_log == True: 
+#     #"""
+#     stats_fi = "{0:.4f}, {1:.4f}, {2:.4f}".format(np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
+#     dict = {args.exp_name + "," : stats_fi }
+#     w = csv.writer(open("Results/{0}_stats.csv".format(args.exp_name), "a"))
+#     for key, val in dict.items(): w.writerow([key, val]) #"""
+#     print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
             

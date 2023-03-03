@@ -118,7 +118,6 @@ class ValImageDataset(Dataset):
         for targ_ in targs: 
             if self.proj in targ_: self.targs.append(targ_)
         
-        # self.transforms = T.Compose(transforms_)
         self.transforms = T.Compose([
                                 T.Resize((256, 256), Image.BICUBIC),
                                 T.ToTensor(),
@@ -127,8 +126,6 @@ class ValImageDataset(Dataset):
     def __random_shuffle__(self): 
         
         """ For image complete exp """
-        # self.files, self.targs, self.metadata = shuffle(self.files, self.targs, self.metadata )
-        # self.metadata.index = np.arange(len(self.files))
         self.files, self.targs = shuffle(self.files, self.targs)
     
 
@@ -238,38 +235,3 @@ class Loader():
 
     def __len__(self):
         return len(self.train_generator)
-
-
-"""
-
-# Configure dataloaders
-transforms = [
-    # T.Resize((256, 256), Image.BICUBIC),
-    T.ToTensor(),
-    # min_max_scaling(range = [-1,1]),
-    #T.Normalize((0.5,), (0.5,)),
-]
-
-
-# Configure data loader
-dataset_name = 'CESM'
-data_loader = Loader(data_path = 'Data/cesm_patches/', proj = "MLO", 
-                     dataset_name = dataset_name, format = "tif",
-                     batch_size = 5, img_res=(256, 256), n_channels = 1, 
-                     transforms = transforms)
-
-
-images = data_loader.train_generator[20:30]
-print (images["in"].shape, images["out"].shape)
-sample_in = images["in"][0]
-sample_out = images["out"][0]
-
-import matplotlib.pyplot as plt
-_, axes = plt.subplots(2,2,figsize=(10,10))
-axes = axes.ravel()
-axes[0].imshow(np.squeeze(images["in"][5].detach().numpy()), cmap="gray")
-axes[1].imshow(np.squeeze(images["out"][5].detach().numpy()), cmap="gray")
-axes[2].imshow(np.squeeze(images["in"][7].detach().numpy()), cmap="gray")
-axes[3].imshow(np.squeeze(images["out"][7].detach().numpy()), cmap="gray")
-plt.savefig("im1.png"); plt.close()
-"""
