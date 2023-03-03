@@ -250,7 +250,7 @@ def run_model(args):
 
                 # Print log
                 sys.stdout.write(
-                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s; lr: %f" # 
+                    "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
                     % (
                         epoch,
                         args.n_epochs,
@@ -261,7 +261,6 @@ def run_model(args):
                         loss_GAN.item(),
                         loss_pixel.item(),
                         'ETA: %d:%d:%d' %(hours,minutes,seconds),
-                        optimizer_G.param_groups[0]["lr"]
                     )
                 )
 
@@ -284,7 +283,6 @@ def run_model(args):
                         {
                         "Batch/G": loss_G.item(),
                         "Batch/G_Pixel_Loss": loss_pixel.item(),
-                        "Learning_Rate": optimizer_G.param_groups[0]["lr"],
                         },
                         step=(epoch*args.batch_size)+i
                     )
@@ -321,7 +319,6 @@ def run_model(args):
             if(args.img_complete):
                 sample_images(args, data_loader, generator, epoch, img_complete= True)
             else:
-                sample_images(args, data_loader, generator, epoch, img_complete= True)
                 sample_images(args, data_loader, generator, epoch, img_complete= False)
                 
                 
