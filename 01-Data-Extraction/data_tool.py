@@ -261,9 +261,9 @@ elif(args.name_data == "cdd-cesm"):
             
             if(subset != "val"):
                 if((args.patches) and ((args.porcent_bg == 0) or args.porcent_borde == 0)):
-                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([img1, img2], n_patches = 100, patch_size = 256, return_patch_locs=True)
+                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([img1, img2], n_patches = 50, patch_size = 256, return_patch_locs=True)
                 elif ((args.patches) and ((args.porcent_bg != 0) or args.porcent_borde != 0)):
-                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([img1, img2], n_patches = 100, patch_size = 256, return_patch_locs=True)                
+                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([img1, img2], n_patches = 50, patch_size = 256, return_patch_locs=True)                
             else:
                 im_1_c = img1
                 im_2_c = img2

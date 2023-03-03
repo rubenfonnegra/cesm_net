@@ -20,8 +20,7 @@ def main():
     parser.add_argument("--result_dir", type = str, default = "Results/", help = "Results path. Default = %(default)s")
     parser.add_argument("--generate", help="Image generation mode (default: False)", default=None, action="store_true")
     parser.add_argument("--img_complete", help="Image complete or patches exp?", default=False, action="store_true")
-    # parser.add_argument("--ce_metrics", help="CE metrics computation mode (default: False)", default=None, action="store_true")
-
+    
     # Custom configs
     ### Main adv loss
     parser.add_argument("--type_model", help="Type model to use.", default = "UNet", choices=["UNet", "GAN", "Attention"])
