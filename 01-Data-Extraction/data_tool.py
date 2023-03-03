@@ -145,7 +145,7 @@ def extract_patches_without_background (images, n_patches = 25, patch_size = 256
     if not return_patch_locs: return patches_im1, patches_im2
     else: return patches_im1, patches_im2, im_1_c, im_2_c
 
-def save_images(patches, name, output_path, subset, side, proj):
+def save_images(patches, name, output_path, subset, name_data, side=None, proj=None):
     #
     # os.makedirs(output_path, exist_ok = True)
     os.makedirs(output_path + "/LE/" + subset, exist_ok = True)
@@ -153,92 +153,137 @@ def save_images(patches, name, output_path, subset, side, proj):
     
     patches_le, patches_rc = patches
     
-    for i, (patch_le, patch_rc) in enumerate(zip(patches_le, patches_rc)):
-        _ = Image.fromarray(patch_le).save('{0}/LE/{1}/{2}_{3}_{4}_{5}.tif'.format(output_path, subset, name, proj, side, i))
-        _ = Image.fromarray(patch_rc).save('{0}/RC/{1}/{2}_{3}_{4}_{5}.tif'.format(output_path, subset, name, proj, side, i))
+    if(name_data == "cesm"):
+        for i, (patch_le, patch_rc) in enumerate(zip(patches_le, patches_rc)):
+            _ = Image.fromarray(patch_le).save('{0}/LE/{1}/{2}_{3}_{4}_{5}.tif'.format(output_path, subset, name, proj, side, i))
+            _ = Image.fromarray(patch_rc).save('{0}/RC/{1}/{2}_{3}_{4}_{5}.tif'.format(output_path, subset, name, proj, side, i))
+    elif(name_data == "cdd-cesm"):
+        for i, (patch_le, patch_rc) in enumerate(zip(patches_le, patches_rc)):
+            _ = Image.fromarray(patch_le).save('{0}/LE/{1}/{2}_{3}.tif'.format(output_path, subset, name, i))
+            _ = Image.fromarray(patch_rc).save('{0}/RC/{1}/{2}_{3}.tif'.format(output_path, subset, name, i))
+
 
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--b_id", type=str, default="L")
-parser.add_argument("--pr_id", type=str, default="MLO")
+parser.add_argument("--pr_id", type=str, default="CC")
 parser.add_argument("--porcent_bg", type=int, default=0)
 parser.add_argument("--porcent_borde", type=int, default=0)
-parser.add_argument("--patches", type=bool, default=False )
-parser.add_argument("--name", type=str, default="data_img_complete")
-parser.add_argument("--path_data", type=str, default = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/OtrosDatasets/cesm_data/")
-parser.add_argument("--path_csv", type=str, default = "/media/labmirp/Datos/workspaces/cesm_net/Data/")
-parser.add_argument("--path_output", type=str, default = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/OtrosDatasets/cesm_patches/cesm_patches/")
+parser.add_argument("--patches", default=True, action="store_true")
+parser.add_argument("--name", type=str, default="prueba")
+parser.add_argument("--name_data", type=str, default="cdd-cesm")
+parser.add_argument("--path_data", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
+parser.add_argument("--path_csv", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
+parser.add_argument("--path_output", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/01_Data/")
 
 args = parser.parse_args()
 
 print(args.__dict__)
 
-""" Extract the configuration from arguments """
-b_id            = args.b_id
-pr_id           = args.pr_id
-porcent_bg      = args.porcent_bg
-porcent_borde   = args.porcent_borde
-name            = args.name
-patches         = args.patches
-path            = args.path_data
-path_csv        = args.path_csv
-path_output     = os.path.join(args.path_output, args.name)
+os.makedirs(args.path_output, exist_ok=True)
 
-os.makedirs(path_output, exist_ok=True)
-
-if patches:
-    subsets = ["train", "test", "val"]
+if args.patches:
+    subsets = [ "train", "test", "val"]
 else:
     subsets = ["train", "test"]
-    
 
-for subset in subsets:
+path_output = os.path.join(args.path_output, args.name)
     
-    if (patches) and subset == "val":
-        meta_ = pd.read_csv( os.path.join( path_csv, f"test_{b_id}_{pr_id}.csv" ) )
-    
-    meta_ = pd.read_csv( os.path.join( path_csv, f"{subset}_{b_id}_{pr_id}.csv" ) )
-
-    for i in tqdm(meta_.index, ncols = 100):
+if(args.name_data == "cesm"):
+    for subset in subsets:
         
-        name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
+        if (args.patches) and subset == "val":
+            meta_ = pd.read_csv( os.path.join( args.path_csv, f"test_{args.pr_id}.csv" ) )
+        
+        meta_ = pd.read_csv( os.path.join( args.path_csv, f"{subset}_{args.pr_id}.csv" ) )
+
+        for i in tqdm(meta_.index, ncols = 100):
             
-        if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
-            continue
-        
-        print (name_p + b_id + pr_id)
-        
-        dcm1 = pydicom.dcmread(path + meta_["le_file"].iloc[i]).pixel_array
-        dcm2 = pydicom.dcmread(path + meta_["rec_file"].iloc[i]).pixel_array
-        
-        wl, ww = 2020, 2280
-        
-        dcm2 = clamp_histogram(dcm2, range_ = [wl, ww])
-        
-        dcm1 = scaler(dcm1, range_out = [0,1])
-        dcm2 = scaler(dcm2, range_out = [0,1])
-        
-        if((patches) and ((porcent_bg == 0) or porcent_borde == 0)):
-            patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
-        elif ((patches) and ((porcent_bg != 0) or porcent_borde != 0)):
-            patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
-        
-        
-        _, axes = plt.subplots(1,2, figsize=(12, 8))
-        axes[0].imshow(dcm1, cmap="gray")
-        axes[1].imshow(dcm2, cmap="gray")
-        
-        for ax in axes: ax.set_axis_off()
-        plt.tight_layout()
-        os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
-        plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}_{b_id}_{pr_id}.png") )
-        
-        if(patches):    
-            save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
-        else:
-            save_images([[dcm1], [dcm2]], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
+            name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
+                
+            if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
+                continue
+            
+            print (name_p + args.b_id + args.pr_id)
+            
+            dcm1 = pydicom.dcmread(args.path + meta_["le_file"].iloc[i]).pixel_array
+            dcm2 = pydicom.dcmread(args.path + meta_["rec_file"].iloc[i]).pixel_array
+            
+            wl, ww = 2020, 2280
+            
+            dcm2 = clamp_histogram(dcm2, range_ = [wl, ww])
+            
+            dcm1 = scaler(dcm1, range_out = [0,1])
+            dcm2 = scaler(dcm2, range_out = [0,1])
+            
+            if((args.patches) and ((args.porcent_bg == 0) or args.porcent_borde == 0)):
+                patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
+            elif ((args.patches) and ((args.porcent_bg != 0) or args.porcent_borde != 0)):
+                patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
+            
+            
+            _, axes = plt.subplots(1,2, figsize=(12, 8))
+            axes[0].imshow(dcm1, cmap="gray")
+            axes[1].imshow(dcm2, cmap="gray")
+            
+            for ax in axes: ax.set_axis_off()
+            plt.tight_layout()
+            os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
+            plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}_{args.b_id}_{args.pr_id}.png") )
+            
+            if(args.patches):    
+                save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id)
+            else:
+                save_images([[dcm1], [dcm2]], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id)
 
+elif(args.name_data == "cdd-cesm"):
+
+    for subset in subsets:
+        
+        if (args.patches) and (subset == "val"):
+            meta_ = pd.read_csv( os.path.join( args.path_csv, f"test_{args.pr_id}.csv" ) )
+        else:
+            meta_ = pd.read_csv( os.path.join( args.path_csv, f"{subset}_{args.pr_id}.csv" ) )
+
+        for i in tqdm(meta_.index, ncols = 100):
+            
+            name_p = meta_["LE"].iloc[i] [:meta_["LE"].iloc[i].find("_")+2]
+            name_p = f"{name_p}_{args.pr_id}"
+                
+            print (f"{name_p}_{args.pr_id}")
+            
+            img1 = np.asarray( Image.open( os.path.join( args.path_data, "LE", meta_["LE"].iloc[i])).convert("F"))
+            img2 = np.asarray( Image.open( os.path.join( args.path_data, "RC", meta_["RC"].iloc[i])).convert("F"))
+                    
+            img1 = scaler(img1, range_out = [0,1])
+            img2 = scaler(img2, range_out = [0,1])
+            
+            if(subset != "val"):
+                if((args.patches) and ((args.porcent_bg == 0) or args.porcent_borde == 0)):
+                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([img1, img2], n_patches = 100, patch_size = 256, return_patch_locs=True)
+                elif ((args.patches) and ((args.porcent_bg != 0) or args.porcent_borde != 0)):
+                    patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([img1, img2], n_patches = 100, patch_size = 256, return_patch_locs=True)                
+            else:
+                im_1_c = img1
+                im_2_c = img2
+
+            _, axes = plt.subplots(1,2, figsize=(12, 8))
+            axes[0].imshow(im_1_c, cmap="gray")
+            axes[1].imshow(im_2_c, cmap="gray")
+            
+            for ax in axes: ax.set_axis_off()
+            plt.tight_layout()
+            os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
+            plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}.png") )
+            plt.close("all")
+            
+            if(args.patches) and (subset!="val"):    
+                save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, name_data=args.name_data)
+            elif(not(args.patches)) and (subset!="val"):
+                save_images([[img1], [img2]], name = name_p, output_path = path_output, subset = subset, name_data=args.name_data)
+            elif(args.patches) and (subset =="val"):
+                save_images([[img1], [img2]], name = name_p, output_path = path_output, subset = subset, name_data=args.name_data)
 
 # subset = "test"
 # meta_ = pd.read_csv( os.path.join( path_csv, f"test_{b_id}_{pr_id}.csv" ) )
