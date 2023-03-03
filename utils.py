@@ -245,6 +245,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
                 output_dir_c = "%s/images/ep%s/image_complete" % (args.result_dir, epoch)
             else:
                 output_dir_p = "%s/images/ep%s/patches" % (args.result_dir, epoch)
+                output_dir_c = "%s/images/ep%s/image_complete" % (args.result_dir, epoch)
                 
         if shuffled:
             if(not(img_complete)): 
@@ -288,7 +289,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
                       generator     = generator,
                       difference    = True)
 
-def plot_imgs(args, lucky, dataloader, output_dir, generator, difference, output_attn, attention = False, write_log = False):
+def plot_imgs(args, lucky, dataloader, output_dir, generator, difference=True, output_attn=None, attention = False, write_log = False):
     
     """Saves a generated sample from the validation set"""
     Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
@@ -321,7 +322,7 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference, output
             diffmap = abs(real_out.data - fake_out.data) 
             img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
             diffmaps = [diffmap.cpu().numpy()]
-            save_images(img_sample, output_dir = output_dir + "%s.png" % (k), \
+            save_images(img_sample, output_dir = os.path.join(output_dir, f"{k}.png"), \
                         diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
             
             ##---- Metrics -----

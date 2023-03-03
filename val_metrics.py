@@ -62,10 +62,8 @@ if( not( args.img_complete )):
     data_loader_p = data_loader.test_generator
 
 # Initialize generator and discriminator
-if(args.model == "UNet_Deep"):
-    generator = UNet_Generator_Deep(in_channels = args.channels)
-elif(args.model == "UNet_Not_Deep"):
-    generator = UNet_Generator_Not_Deep(in_channels= args.channels)
+if(args.model == "Unet"):
+    generator = UNet_Generator(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "PA-UNet"):

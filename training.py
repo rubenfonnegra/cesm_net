@@ -42,7 +42,7 @@ def setup_configs(args):
 def run_model(args):
     
     # Initialize generator and discriminator
-    if(args.model == "UNet_Deep"):
+    if(args.model == "Unet"):
         generator = UNet_Generator(in_channels = args.channels)
     elif(args.model == "Residual-PA-Unet"):
         generator = Residual_PA_UNet_Generator(in_channels= args.channels)
@@ -293,7 +293,7 @@ def run_model(args):
                     'Avg_Ep/G_Pixel_Loss': avg_logs[3]
                 }
                     
-            wandb.log(data, epoch=epoch)
+            wandb.log(data, step=epoch)
 
         # Shuffle train data everything
         data_loader.on_epoch_end(shuffle = "train")
