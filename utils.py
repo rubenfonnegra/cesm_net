@@ -139,84 +139,102 @@ def save_configs (args):
 ## 
 def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = True, \
                                output_dir = None, write_log = False, img_complete = True):
-    
-        dataloader_ = dataloader.test_generator if (img_complete) else dataloader.val_generator
+
+        if (img_complete):
+            dataloader_c = dataloader.test_generator
+        else:
+            dataloader_c = dataloader.test_generator
+            dataloader_p = dataloader.val_generator
+        
+        #dataloader_ = dataloader.test_generator if (img_complete) else dataloader.val_generator
         
         """Saves a generated sample from the validation set"""
         Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
         difference = True
 
-        if output_dir == None: 
-            output_dir = "%s/images/ep%s/" % (args.result_dir, epoch)
+        if output_dir == None:
+            
+            if(img_complete): 
+                output_dir_c = "%s/images/ep%s/" % (args.result_dir, epoch)
+                os.makedirs(output_dir_c, exist_ok = True)
+            else:
+                output_dir_c = "%s/images/ep%s/img_complete" % (args.result_dir, epoch)
+                output_dir_p = "%s/images/ep%s/patches" % (args.result_dir, epoch)
+                os.makedirs(output_dir_c, exist_ok = True)
+                os.makedirs(output_dir_p, exist_ok = True)
 
-        if shuffled: 
-            lucky = np.random.randint(0, len(dataloader_), args.sample_size)
+        if shuffled:
+            if(not(img_complete)): 
+                lucky_c = np.random.randint(0, len(dataloader_c), args.sample_size)
+                lucky_p = np.random.randint(0, len(dataloader_p), args.sample_size)
+            else:
+                lucky_c = np.random.randint(0, len(dataloader_c), args.sample_size)
+        
         else: 
-            lucky = np.arange(0, args.sample_size)
-        
-        out_dir = output_dir+"imgs_completa/" if (img_complete) else output_dir+"imgs_parches/"
-        os.makedirs(out_dir, exist_ok = True)
-        
-        if args.type_model == "Attention":
-            out_dir_attn = output_dir+"attn_maps/"+"imgs_completa/" if (img_complete) else output_dir+"attn_maps/"+"imgs_parches/"
-        
-        m_fi, s_fi, p_fi = [], [], []
-
-        for k, l in tqdm(enumerate(lucky), ncols=100):
-            
-            if True:
-
-                img = dataloader_[int(l)]
-                real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
-                real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
-
-                if(args.type_model == "Attention"):
-
-                    fake_out, dictOutput = generator(real_in)
-
-                    os.makedirs(out_dir_attn+str(l), exist_ok = True)
-                    for key, value in dictOutput.items():
-                        value = value.cpu().detach().numpy()
-                        np.save(f"{out_dir_attn}{str(l)}/{key}.npy", value)
-                
-                else:
-                    fake_out = generator(real_in)
-
-                if difference:
-                    diffmap = abs(real_out.data - fake_out.data) 
-                    img_sample = [real_in.data.cpu().numpy(), real_out.data.cpu().numpy(), fake_out.data.cpu().numpy()]
-                    diffmaps = [diffmap.cpu().numpy()]
-                    
-                    ##---- Metrics -----##
-                    ##--- FIM ---##
-                    m_, s_, p_ = pixel_metrics((real_out.data.cpu().numpy()+1)/2, (fake_out.data.cpu().numpy()+1)/2)
-                    m_fi.append(m_), s_fi.append(s_), p_fi.append(p_)
-                    
-                    save_images(img_sample, output_dir = out_dir + "%s.png" % (k), \
-                                diffmap = diffmaps, diffmap_ax = [3], plot_shape = (1,4), figsize=(12,3))
+            if(not(img_complete)): 
+                lucky_c = np.arange(0, args.sample_size)
+                lucky_p = np.arange(0, args.sample_size)
             else:
-                print (e)
-                continue
+                lucky_c = np.arange(0, args.sample_size)
         
-        if write_log == True: 
-            #""" args.sample_size
-            ca = "None"
-            stats_fi = "{0},{1:.6f},{2:.6f},{3:.6f}".format(args.exp_name, \
-                                                np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
+        # if shuffled: 
+        #     lucky = np.random.randint(0, len(dataloader_), args.sample_size)
+        # else: 
+        #     lucky = np.arange(0, args.sample_size)
+        
+        # out_dir = output_dir+"imgs_completa/" if (img_complete) else output_dir+"imgs_parches/"
+        # os.makedirs(out_dir, exist_ok = True)
+        
+        if args.type_model == "attention":
             
-            dict = {args.exp_name + "avg_fim" : stats_fi}
-
-            output_dir = "%s/metrics/" % (args.result_dir)
-            os.makedirs(output_dir, exist_ok=True)
-            
-            if img_complete:
-                w = csv.writer(open("{0}/{1}_stats_img_complete.csv".format(output_dir, args.exp_name), "a"))
+            if(img_complete):
+                output_attn_c = os.path.join( output_dir_c, "attention_maps", "imgs_complete" )
+                os.makedirs( output_attn_c, exist_ok= True )
             else:
-                w = csv.writer(open("{0}/{1}_stats_patch.csv".format(output_dir, args.exp_name), "a"))
-                
-            for key, val in dict.items(): w.writerow([key, val]) #"""
-            print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
+                output_attn_c = os.path.join( output_dir_c, "attention_maps", "imgs_complete" )
+                output_attn_p = os.path.join( output_dir_p, "attention_maps", "patches" )
+                os.makedirs( output_attn_c, exist_ok= True )
+                os.makedirs( output_attn_p, exist_ok= True ) 
+        
+            # output_attn = output_dir+"attn_maps/"+"imgs_completa/" if (img_complete) else output_dir+"attn_maps/"+"imgs_parches/"
+        
+        if(not(img_complete)):
             
+            """ Plot and save pathes"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_p,
+                      dataloader    = dataloader_p,
+                      output_dir    = output_dir_p,
+                      generator     = generator,
+                      difference    = True,
+                      output_attn   = output_attn_c,
+                      attention     = True,
+                      write_log     = True)
+            
+            """ Plot and save images complete"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_c,
+                      dataloader    = dataloader_c,
+                      output_dir    = output_dir_c,
+                      generator     = generator,
+                      difference    = True,
+                      output_attn   = output_attn_c,
+                      attention     = True,
+                      write_log     = True)
+        
+        else:
+            
+            """ Plot and save images complete"""
+            plot_imgs(args          = args,
+                      lucky         = lucky_c,
+                      dataloader    = dataloader_c,
+                      output_dir    = output_dir_c,
+                      generator     = generator,
+                      difference    = True,
+                      output_attn   = output_attn_c,
+                      attention     = True,
+                      write_log     = True)
+               
 ##
 ## Image saving during training
 ## 
@@ -270,7 +288,7 @@ def sample_images(args, dataloader, generator, epoch, difference = True, output_
                       generator     = generator,
                       difference    = True)
 
-def plot_imgs(args, lucky, dataloader, output_dir, generator, difference):
+def plot_imgs(args, lucky, dataloader, output_dir, generator, difference, output_attn, attention = False, write_log = False):
     
     """Saves a generated sample from the validation set"""
     Tensor = torch.cuda.FloatTensor if args.cuda else torch.FloatTensor
@@ -282,12 +300,20 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference):
         
         img = dataloader[int(l)]
 
-            
         real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
         real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
         
-        if(args.type_model == "Attention"):
-            fake_out, _ = generator(real_in)
+        if(args.type_model == "attention"):
+
+            fake_out, dictOutput = generator(real_in)
+            
+            if (attention):
+                
+                os.makedirs(output_attn+str(l), exist_ok = True)
+                for key, value in dictOutput.items():
+                    value = value.cpu().detach().numpy()
+                    np.save(f"{output_attn}{str(l)}/{key}.npy", value)
+    
         else:
             fake_out = generator(real_in)
 
@@ -305,12 +331,21 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference):
         else:
             img_sample = torch.cat((real_in.data, real_out.data, fake_out.data), -1)
             save_image(img_sample, output_dir + "%s.png" % (k), normalize=True)
+        
+    if write_log == True: 
+        
+        stats_fi = "{0},{1:.6f},{2:.6f},{3:.6f}".format(args.exp_name, \
+                                            np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
+        
+        dict = {args.exp_name + "avg_fim" : stats_fi}
 
-# if write_log == True: 
-#     #"""
-#     stats_fi = "{0:.4f}, {1:.4f}, {2:.4f}".format(np.mean(m_fi),np.mean(s_fi),np.mean(p_fi))
-#     dict = {args.exp_name + "," : stats_fi }
-#     w = csv.writer(open("Results/{0}_stats.csv".format(args.exp_name), "a"))
-#     for key, val in dict.items(): w.writerow([key, val]) #"""
-#     print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
+        output_dir = "%s/metrics/" % (args.result_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        if args.img_complete:
+            w = csv.writer(open("{0}/{1}_stats_img_complete.csv".format(output_dir, args.exp_name), "a"))
+        else:
+            w = csv.writer(open("{0}/{1}_stats_patch.csv".format(output_dir, args.exp_name), "a"))            
             
+        for key, val in dict.items(): w.writerow([key, val])
+        print ("\n [!] -> Results saved in: Results/{0}_stats.csv \n".format(args.exp_name))
