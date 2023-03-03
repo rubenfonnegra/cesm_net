@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--data_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Data/data_img_complete/", help="Data dir path")
     parser.add_argument("--result_dir", type = str, default = "Results/", help = "Results path. Default = %(default)s")
     parser.add_argument("--generate", help="Image generation mode (default: False)", default=None, action="store_true")
-    parser.add_argument("--img_complete", help="Image complete or patches exp?", default=True, action="store_true")
+    parser.add_argument("--img_complete", help="Image complete or patches exp?", default=False, action="store_true")
     # parser.add_argument("--ce_metrics", help="CE metrics computation mode (default: False)", default=None, action="store_true")
 
     # Custom configs
