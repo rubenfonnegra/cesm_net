@@ -9,7 +9,40 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from natsort import natsorted, ns
 import argparse
+from skimage.transform import resize
 
+
+def crop_images(self, im_input_, im_output_):
+
+        max_heigth = []
+        max_widht = []
+
+        for j in range( im_input_.shape[1]):
+            
+            if(( im_input_[:,j] != 0.).any() ):
+                max_widht.append(j)
+                
+        
+        for j in range( im_input_.shape[0]):
+
+            if(( im_input_[j,:] != 0.).any() ):
+                max_heigth.append(j)                        
+    
+        if ( (im_input_[:, 0] != 0.).any() ):
+
+            max_widht = max_widht[-1]
+            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
+        
+        else:
+            max_widht = max_widht[0]
+            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
+            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
+
+        # im_input_   = resize(im_input_, (256, 256) )
+        # im_output_  = resize(im_output_, (256, 256) )
+
+        return im_input_, im_output_
 
 def clamp_histogram(im_, range_ = [2020, 2280]):
     #
@@ -167,15 +200,17 @@ def save_images(patches, name, output_path, subset, name_data, side=None, proj=N
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--b_id", type=str, default="L")
-parser.add_argument("--pr_id", type=str, default="CC")
+parser.add_argument("--pr_id", type=str, default="MLO")
 parser.add_argument("--porcent_bg", type=int, default=0)
 parser.add_argument("--porcent_borde", type=int, default=0)
-parser.add_argument("--patches", default=True, action="store_true")
+parser.add_argument("--patches", default=False, action="store_true")
 parser.add_argument("--name", type=str, default="prueba")
 parser.add_argument("--name_data", type=str, default="cdd-cesm")
 parser.add_argument("--path_data", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
 parser.add_argument("--path_csv", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
 parser.add_argument("--path_output", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/01_Data/")
+parser.add_argument("--plot_resize", default=True, action="store_true")
+parser.add_argument("--crop", default=True, action="store_true")
 
 args = parser.parse_args()
 
@@ -191,6 +226,7 @@ else:
 path_output = os.path.join(args.path_output, args.name)
     
 if(args.name_data == "cesm"):
+    
     for subset in subsets:
         
         if (args.patches) and subset == "val":
@@ -202,8 +238,8 @@ if(args.name_data == "cesm"):
             
             name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
                 
-            if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
-                continue
+            # if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
+            #     continue
             
             print (name_p + args.b_id + args.pr_id)
             
@@ -222,7 +258,9 @@ if(args.name_data == "cesm"):
             elif ((args.patches) and ((args.porcent_bg != 0) or args.porcent_borde != 0)):
                 patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
             
-            
+            if( args.crop ):
+                dcm1, dcm2 = crop_images(dcm1, dcm2)
+                        
             _, axes = plt.subplots(1,2, figsize=(12, 8))
             axes[0].imshow(dcm1, cmap="gray")
             axes[1].imshow(dcm2, cmap="gray")
@@ -231,6 +269,22 @@ if(args.name_data == "cesm"):
             plt.tight_layout()
             os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
             plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}_{args.b_id}_{args.pr_id}.png") )
+
+            if(args.plot_resize):
+
+                im_1_c = resize(dcm1, (256,256))
+                im_2_c = resize(dcm2, (256,256))
+                _, axes = plt.subplots(1,2, figsize=(12, 8))
+                axes[0].imshow(im_1_c, cmap="gray")
+                axes[0].set_title("Low Energy")
+                axes[1].imshow(im_2_c, cmap="gray")
+                axes[1].set_title("Recombined")
+                
+                for ax in axes: ax.set_axis_off()
+                plt.tight_layout()
+                os.makedirs( os.path.join (path_output, "resize", subset), exist_ok=True)
+                plt.savefig( os.path.join (path_output, "resize", subset, f"{name_p}.png") )
+                plt.close("all")
             
             if(args.patches):    
                 save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id)
@@ -251,7 +305,7 @@ elif(args.name_data == "cdd-cesm"):
             name_p = meta_["LE"].iloc[i] [:meta_["LE"].iloc[i].find("_")+2]
             name_p = f"{name_p}_{args.pr_id}"
                 
-            print (f"{name_p}_{args.pr_id}")
+            print (f"{name_p}")
             
             img1 = np.asarray( Image.open( os.path.join( args.path_data, "LE", meta_["LE"].iloc[i])).convert("F"))
             img2 = np.asarray( Image.open( os.path.join( args.path_data, "RC", meta_["RC"].iloc[i])).convert("F"))
@@ -259,14 +313,15 @@ elif(args.name_data == "cdd-cesm"):
             img1 = scaler(img1, range_out = [0,1])
             img2 = scaler(img2, range_out = [0,1])
             
+            im_1_c = img1
+            im_2_c = img2
+
             if(subset != "val"):
                 if((args.patches) and ((args.porcent_bg == 0) or args.porcent_borde == 0)):
                     patches_le, patches_rc, im_1_c, im_2_c = extract_patches_without_background ([img1, img2], n_patches = 50, patch_size = 256, return_patch_locs=True)
                 elif ((args.patches) and ((args.porcent_bg != 0) or args.porcent_borde != 0)):
                     patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([img1, img2], n_patches = 50, patch_size = 256, return_patch_locs=True)                
-            else:
-                im_1_c = img1
-                im_2_c = img2
+                
 
             _, axes = plt.subplots(1,2, figsize=(12, 8))
             axes[0].imshow(im_1_c, cmap="gray")
@@ -277,6 +332,23 @@ elif(args.name_data == "cdd-cesm"):
             os.makedirs( os.path.join (path_output, "vis", subset), exist_ok=True)
             plt.savefig( os.path.join (path_output, "vis", subset, f"{name_p}.png") )
             plt.close("all")
+
+            if(args.plot_resize):
+
+                im_1_c = resize(img1, (256,256))
+                im_2_c = resize(img2, (256,256))
+                _, axes = plt.subplots(1,2, figsize=(12, 8))
+                axes[0].imshow(im_1_c, cmap="gray")
+                axes[0].set_title("Low Energy")
+                axes[1].imshow(im_2_c, cmap="gray")
+                axes[1].set_title("Recombined")
+                
+                for ax in axes: ax.set_axis_off()
+                plt.tight_layout()
+                os.makedirs( os.path.join (path_output, "resize", subset), exist_ok=True)
+                plt.savefig( os.path.join (path_output, "resize", subset, f"{name_p}.png") )
+                plt.close("all")
+
             
             if(args.patches) and (subset!="val"):    
                 save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, name_data=args.name_data)
@@ -355,44 +427,6 @@ elif(args.name_data == "cdd-cesm"):
     
 #     save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = b_id, proj = pr_id)
 
-    # def crop_images(self, sample):
-
-    #     im_input_  = Image.open(self.files[sample]).convert("F")
-    #     im_output_ = Image.open(self.targs[sample]).convert("F")
-    #     im_input_   = np.asarray(im_input_)
-    #     im_output_  = np.asarray(im_output_)
-
-    #     max_heigth = []
-    #     max_widht = []
-
-    #     for j in range( im_input_.shape[1]):
-            
-    #         if(( im_input_[:,j] != 0.).any() ):
-    #             max_widht.append(j)
-                
-        
-    #     for j in range( im_input_.shape[0]):
-
-    #         if(( im_input_[j,:] != 0.).any() ):
-    #             max_heigth.append(j)                        
     
-    #     if ( (im_input_[:, 0] != 0.).any() ):
-
-    #         max_widht = max_widht[-1]
-    #         im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-    #         im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-        
-    #     else:
-    #         max_widht = max_widht[0]
-    #         im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
-    #         im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
-
-    #     im_input_   = resize(im_input_, (256, 256) )
-    #     im_output_  = resize(im_output_, (256, 256) )
-        
-    #     im_input_   = torch.from_numpy(im_input_[np.newaxis,...])
-    #     im_output_  = torch.from_numpy(im_output_[np.newaxis,...])
-
-    #     return im_input_, im_output_
 
 

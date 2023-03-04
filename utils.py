@@ -154,12 +154,11 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
 
         if output_dir == None:
             
-            if(img_complete): 
-                output_dir_c = "%s/images/ep%s/" % (args.result_dir, epoch)
-                os.makedirs(output_dir_c, exist_ok = True)
-            else:
-                output_dir_c = "%s/images/ep%s/img_complete" % (args.result_dir, epoch)
-                output_dir_p = "%s/images/ep%s/patches" % (args.result_dir, epoch)
+            output_dir = "%s/generate_images/ep%s/" % (args.result_dir, epoch)
+            
+            if(not(img_complete)): 
+                output_dir_c = os.path.join(out_dir, "images_complete")
+                output_dir_p = os.path.join(out_dir, "patches")
                 os.makedirs(output_dir_c, exist_ok = True)
                 os.makedirs(output_dir_p, exist_ok = True)
 
@@ -185,30 +184,36 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
         # out_dir = output_dir+"imgs_completa/" if (img_complete) else output_dir+"imgs_parches/"
         # os.makedirs(out_dir, exist_ok = True)
         
+        output_attn_c   = None
+        output_attn_p   = None
+        attention       = False
+        
         if args.type_model == "attention":
             
             if(img_complete):
-                output_attn_c = os.path.join( output_dir_c, "attention_maps", "imgs_complete" )
+                output_attn_c   = os.path.join( output_dir, "attention_maps", "imgs_complete" )
+                attention       = True
                 os.makedirs( output_attn_c, exist_ok= True )
             else:
-                output_attn_c = os.path.join( output_dir_c, "attention_maps", "imgs_complete" )
-                output_attn_p = os.path.join( output_dir_p, "attention_maps", "patches" )
+                output_attn_c   = os.path.join( output_dir, "attention_maps", "imgs_complete" )
+                output_attn_p   = os.path.join( output_dir, "attention_maps", "patches" )
+                attention       = True
                 os.makedirs( output_attn_c, exist_ok= True )
-                os.makedirs( output_attn_p, exist_ok= True ) 
-        
+                os.makedirs( output_attn_p, exist_ok= True )          
+            
             # output_attn = output_dir+"attn_maps/"+"imgs_completa/" if (img_complete) else output_dir+"attn_maps/"+"imgs_parches/"
         
         if(not(img_complete)):
             
-            """ Plot and save pathes"""
+            """ Plot and save patches"""
             plot_imgs(args          = args,
                       lucky         = lucky_p,
                       dataloader    = dataloader_p,
                       output_dir    = output_dir_p,
                       generator     = generator,
                       difference    = True,
-                      output_attn   = output_attn_c,
-                      attention     = True,
+                      output_attn   = output_attn_p,
+                      attention     = attention,
                       write_log     = True)
             
             """ Plot and save images complete"""
@@ -219,7 +224,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                       generator     = generator,
                       difference    = True,
                       output_attn   = output_attn_c,
-                      attention     = True,
+                      attention     = attention,
                       write_log     = True)
         
         else:
@@ -232,7 +237,7 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
                       generator     = generator,
                       difference    = True,
                       output_attn   = output_attn_c,
-                      attention     = True,
+                      attention     = attention,
                       write_log     = True)
                
 ##

@@ -27,7 +27,7 @@ parser.add_argument("--image_size", type=int, default=256)
 parser.add_argument("--channels", type=int, default=1)
 parser.add_argument("--dataset_name", type=str, default="cesm")
 parser.add_argument("--model", type=str, default="SA-UNet")
-parser.add_argument("--type_model", type=str, default="Attention")
+parser.add_argument("--type_model", type=str, default="attention")
 parser.add_argument("--epoch", type=int, default=400)
 parser.add_argument("--img_complete", default=True, action="store_true")
 parser.add_argument("--sample_size", type=int, default=20)
@@ -95,7 +95,7 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-    if(args.type_model == "Attention"):
+    if(args.type_model == "attention"):
         fake_out, _ = generator(real_in)
     else:
         fake_out    = generator(real_in)
