@@ -157,8 +157,8 @@ def generate_images_with_stats(args, dataloader, generator, epoch, shuffled = Tr
             output_dir = "%s/generate_images/ep%s/" % (args.result_dir, epoch)
             
             if(not(img_complete)): 
-                output_dir_c = os.path.join(out_dir, "images_complete")
-                output_dir_p = os.path.join(out_dir, "patches")
+                output_dir_c = os.path.join(output_dir, "images_complete")
+                output_dir_p = os.path.join(output_dir, "patches")
                 os.makedirs(output_dir_c, exist_ok = True)
                 os.makedirs(output_dir_p, exist_ok = True)
 
