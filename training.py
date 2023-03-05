@@ -120,14 +120,12 @@ def run_model(args):
             print ("\n [*] -> Generating test patches.... \n")
             generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                     shuffled = False, write_log = True, \
-                                    output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
                                     img_complete=False)
             print ("\n [✓] -> Done! \n\n")
         
         print ("\n [*] -> Generating test images complete.... \n")
         generate_images_with_stats(args, data_loader, generator, args.epoch, \
                                    shuffled = False, write_log = True, \
-                                   output_dir = "{0}/generated_images/ep_{1}/".format(args.result_dir, args.epoch),
                                    img_complete=True)
         print ("\n [✓] -> Done! \n\n")
         exit()
