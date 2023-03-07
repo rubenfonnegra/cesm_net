@@ -23,7 +23,7 @@ def main():
     
     # Custom configs
     ### Main adv loss
-    parser.add_argument("--type_model", help="Type model to use.", default = "UNet", choices=["UNet", "GAN", "attention"])
+    parser.add_argument("--type_model", help="Type model to use.", default = "UNet", choices=["Unet", "GAN", "attention"])
     parser.add_argument("--model", help="Model to use.", default = "Residual-PA-Unet", choices=["Unet", "GAN", "Residual-PA-Unet", "PA-Unet", "SA-Unet"])
 
     # Dataset params
