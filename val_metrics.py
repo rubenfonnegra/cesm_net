@@ -95,8 +95,10 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-    if(args.type_model == "attention"):
+    if(args.type_model == "attention" and (args.model == "SA-Unet")):
         fake_out, _ = generator(real_in)
+    elif(args.type_model == "attention" and (args.model != "SA-Unet")):
+        fake_out, _, _ = generator(real_in)
     else:
         fake_out    = generator(real_in)
 

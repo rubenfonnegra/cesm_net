@@ -16,15 +16,15 @@ def main():
     # Configs  
     parser.add_argument("--exp_name", type=str, default="prueba3", help="name of the experiment")
     parser.add_argument("--gpus", type = str, default = "0", help="GPUs to use")
-    parser.add_argument("--data_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Data/data_img_complete/", help="Data dir path")
+    parser.add_argument("--data_dir", type = str, default = "Data/sura_full_images/", help="Data dir path")
     parser.add_argument("--result_dir", type = str, default = "Results/", help = "Results path. Default = %(default)s")
     parser.add_argument("--generate", help="Image generation mode (default: False)", default=None, action="store_true")
-    parser.add_argument("--img_complete", help="Image complete or patches exp?", default=False, action="store_true")
+    parser.add_argument("--img_complete", help="Image complete or patches exp?", default=True, action="store_true")
     
     # Custom configs
     ### Main adv loss
-    parser.add_argument("--type_model", help="Type model to use.", default = "UNet", choices=["Unet", "GAN", "attention"])
-    parser.add_argument("--model", help="Model to use.", default = "Residual-PA-Unet", choices=["Unet", "GAN", "Residual-PA-Unet", "PA-Unet", "SA-Unet"])
+    parser.add_argument("--type_model", help="Type model to use.", default = "attention", choices=["Unet", "GAN", "attention"])
+    parser.add_argument("--model", help="Model to use.", default = "SA-Unet", choices=["Unet", "GAN", "Residual-PA-Unet", "PA-Unet", "SA-Unet"])
 
     # Dataset params
     parser.add_argument("--projection", type=str, default="CC", help="Projection in which mammograms were taken")

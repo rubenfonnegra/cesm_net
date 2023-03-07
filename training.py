@@ -46,9 +46,9 @@ def run_model(args):
         generator = UNet_Generator(in_channels = args.channels)
     elif(args.model == "Residual-PA-Unet"):
         generator = Residual_PA_UNet_Generator(in_channels= args.channels)
-    elif(args.model == "PA-UNet"):
+    elif(args.model == "PA-Unet"):
         generator = PA_UNet_Generator(in_channels= args.channels)
-    elif(args.model == "SA-UNet"):
+    elif(args.model == "SA-Unet"):
         generator = SA_UNet_Generator(in_channels= args.channels)
     
     summary(generator, input_size=(5, 1, 256,256))
@@ -180,7 +180,9 @@ def run_model(args):
 
             optimizer_G.zero_grad()
 
-            if (args.type_model == "attention"):
+            if ((args.type_model == "attention") and (args.model == "SA-Unet")):
+                fake_out, _, gamma = generator(real_in)
+            elif ((args.type_model == "attention") and (args.model != "SA-Unet")):
                 fake_out, _ = generator(real_in)
             else:
                 fake_out    = generator(real_in)
@@ -273,6 +275,7 @@ def run_model(args):
                         {
                         "Batch/G": loss_G.item(),
                         "Batch/G_Pixel_Loss": loss_pixel.item(),
+                        "Gamma Attn1": gamma.cpu().detach().numpy()
                         },
                         step=(epoch*args.batch_size)+i
                     )

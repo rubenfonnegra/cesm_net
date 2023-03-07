@@ -325,4 +325,4 @@ class Self_Attention(nn.Module):
         o = self.self_att(v)                            # Self-Attention output [B, C, H, W]
         
         y = self.gamma * o + x                          # Learnable gamma + residual
-        return y, o
+        return y, o, self.gamma
