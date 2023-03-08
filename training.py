@@ -275,7 +275,6 @@ def run_model(args):
                         {
                         "Batch/G": loss_G.item(),
                         "Batch/G_Pixel_Loss": loss_pixel.item(),
-                        "Gamma Attn1": gamma.cpu().detach().numpy()
                         },
                         step=(epoch*args.batch_size)+i
                     )

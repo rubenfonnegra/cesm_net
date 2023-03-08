@@ -26,7 +26,7 @@ parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--image_size", type=int, default=256)
 parser.add_argument("--channels", type=int, default=1)
 parser.add_argument("--dataset_name", type=str, default="cesm")
-parser.add_argument("--model", type=str, default="SA-UNet")
+parser.add_argument("--model", type=str, default="SA-Unet")
 parser.add_argument("--type_model", type=str, default="attention")
 parser.add_argument("--epoch", type=int, default=400)
 parser.add_argument("--img_complete", default=True, action="store_true")
@@ -66,9 +66,9 @@ if(args.model == "Unet"):
     generator = UNet_Generator(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
-elif(args.model == "PA-UNet"):
+elif(args.model == "PA-Unet"):
     generator = PA_UNet_Generator(in_channels= args.channels)
-elif(args.model == "SA-UNet"):
+elif(args.model == "SA-Unet"):
     generator = SA_UNet_Generator(in_channels= args.channels)
 
 generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"G_chkp_{args.epoch}.pth") ))
@@ -96,9 +96,9 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
     if(args.type_model == "attention" and (args.model == "SA-Unet")):
-        fake_out, _ = generator(real_in)
-    elif(args.type_model == "attention" and (args.model != "SA-Unet")):
         fake_out, _, _ = generator(real_in)
+    elif(args.type_model == "attention" and (args.model != "SA-Unet")):
+        fake_out, _ = generator(real_in)
     else:
         fake_out    = generator(real_in)
 
