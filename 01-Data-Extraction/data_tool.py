@@ -12,37 +12,22 @@ import argparse
 from skimage.transform import resize
 
 
-def crop_images(self, im_input_, im_output_):
-
-        max_heigth = []
-        max_widht = []
-
-        for j in range( im_input_.shape[1]):
-            
-            if(( im_input_[:,j] != 0.).any() ):
-                max_widht.append(j)
-                
-        
-        for j in range( im_input_.shape[0]):
-
-            if(( im_input_[j,:] != 0.).any() ):
-                max_heigth.append(j)                        
+def crop_image_only_outside(im_input_, im_output_, tol=0):
     
-        if ( (im_input_[:, 0] != 0.).any() ):
+    mask = im_output_ > 0
 
-            max_widht = max_widht[-1]
-            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], 0: max_widht]
-        
-        else:
-            max_widht = max_widht[0]
-            im_input_   = im_input_[ max_heigth[0]: max_heigth[-1],  max_widht:im_input_.shape[0]]
-            im_output_  = im_output_[ max_heigth[0]: max_heigth[-1], max_widht:im_input_.shape[0]] 
+    # Coordinates of non-black pixels.
+    coords = np.argwhere(mask)
 
-        # im_input_   = resize(im_input_, (256, 256) )
-        # im_output_  = resize(im_output_, (256, 256) )
+    # Bounding box of non-black pixels.
+    x0, y0 = coords.min(axis=0)
+    x1, y1 = coords.max(axis=0) + 1   # slices are exclusive at the top
 
-        return im_input_, im_output_
+    # Get the contents of the bounding box.
+    im_input_cropped = im_input_[x0:x1, y0:y1]
+    im_output_cropped = im_output_[x0:x1, y0:y1]
+    
+    return im_input_cropped, im_output_cropped
 
 def clamp_histogram(im_, range_ = [2020, 2280]):
     #
@@ -200,15 +185,15 @@ def save_images(patches, name, output_path, subset, name_data, side=None, proj=N
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--b_id", type=str, default="L")
-parser.add_argument("--pr_id", type=str, default="MLO")
+parser.add_argument("--pr_id", type=str, default="CC")
 parser.add_argument("--porcent_bg", type=int, default=0)
 parser.add_argument("--porcent_borde", type=int, default=0)
 parser.add_argument("--patches", default=False, action="store_true")
 parser.add_argument("--name", type=str, default="prueba")
-parser.add_argument("--name_data", type=str, default="cdd-cesm")
-parser.add_argument("--path_data", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
-parser.add_argument("--path_csv", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/")
-parser.add_argument("--path_output", type=str, default = "/media/mirplab/TB2/Experiments-Mammography/01_Data/")
+parser.add_argument("--name_data", type=str, default="cesm")
+parser.add_argument("--path_data", type=str, default = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/OtrosDatasets/cesm_data/")
+parser.add_argument("--path_csv", type=str, default = "/media/labmirp/Datos/Proyecto_Colciencias_Mamas/OtrosDatasets/cesm_patches/")
+parser.add_argument("--path_output", type=str, default = "/media/labmirp/Datos/workspaces/cesm_net/Data/cesm_patches/")
 parser.add_argument("--plot_resize", default=True, action="store_true")
 parser.add_argument("--crop", default=True, action="store_true")
 
@@ -230,21 +215,21 @@ if(args.name_data == "cesm"):
     for subset in subsets:
         
         if (args.patches) and subset == "val":
-            meta_ = pd.read_csv( os.path.join( args.path_csv, f"test_{args.pr_id}.csv" ) )
+            meta_ = pd.read_csv( os.path.join( args.path_csv, f"test_{args.b_id}_{args.pr_id}.csv" ) )
         
-        meta_ = pd.read_csv( os.path.join( args.path_csv, f"{subset}_{args.pr_id}.csv" ) )
+        meta_ = pd.read_csv( os.path.join( args.path_csv, f"{subset}_{args.b_id}_{args.pr_id}.csv" ) )
 
         for i in tqdm(meta_.index, ncols = 100):
             
             name_p = meta_["le_file"].iloc[i] [:meta_["le_file"].iloc[i].find("/")-4]
                 
-            # if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
-            #     continue
+            if( name_p == "SCEDM030") or (name_p == "SCEDM053"):
+                continue
             
             print (name_p + args.b_id + args.pr_id)
             
-            dcm1 = pydicom.dcmread(args.path + meta_["le_file"].iloc[i]).pixel_array
-            dcm2 = pydicom.dcmread(args.path + meta_["rec_file"].iloc[i]).pixel_array
+            dcm1 = pydicom.dcmread(args.path_data + meta_["le_file"].iloc[i]).pixel_array
+            dcm2 = pydicom.dcmread(args.path_data + meta_["rec_file"].iloc[i]).pixel_array
             
             wl, ww = 2020, 2280
             
@@ -259,7 +244,7 @@ if(args.name_data == "cesm"):
                 patches_le, patches_rc, im_1_c, im_2_c = extract_patches ([dcm1, dcm2], n_patches = 100, patch_size = 256, return_patch_locs=True)
             
             if( args.crop ):
-                dcm1, dcm2 = crop_images(dcm1, dcm2)
+                dcm1, dcm2 = crop_image_only_outside(dcm1, dcm2)
                         
             _, axes = plt.subplots(1,2, figsize=(12, 8))
             axes[0].imshow(dcm1, cmap="gray")
@@ -283,13 +268,13 @@ if(args.name_data == "cesm"):
                 for ax in axes: ax.set_axis_off()
                 plt.tight_layout()
                 os.makedirs( os.path.join (path_output, "resize", subset), exist_ok=True)
-                plt.savefig( os.path.join (path_output, "resize", subset, f"{name_p}.png") )
+                plt.savefig( os.path.join (path_output, "resize", subset, f"{name_p}_{args.b_id}_{args.pr_id}.png") )
                 plt.close("all")
             
             if(args.patches):    
-                save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id)
+                save_images([patches_le, patches_rc], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id, name_data=args.name_data)
             else:
-                save_images([[dcm1], [dcm2]], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id)
+                save_images([[dcm1], [dcm2]], name = name_p, output_path = path_output, subset = subset, side = args.b_id, proj = args.pr_id, name_data=args.name_data)
 
 elif(args.name_data == "cdd-cesm"):
 

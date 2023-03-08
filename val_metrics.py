@@ -26,7 +26,7 @@ parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--image_size", type=int, default=256)
 parser.add_argument("--channels", type=int, default=1)
 parser.add_argument("--dataset_name", type=str, default="cesm")
-parser.add_argument("--model", type=str, default="SA-UNet")
+parser.add_argument("--model", type=str, default="SA-Unet")
 parser.add_argument("--type_model", type=str, default="attention")
 parser.add_argument("--epoch", type=int, default=400)
 parser.add_argument("--img_complete", default=True, action="store_true")
@@ -66,7 +66,7 @@ if(args.model == "Unet"):
     generator = UNet_Generator(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
-elif(args.model == "PA-UNet"):
+elif(args.model == "PA-Unet"):
     generator = PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "SA-Unet"):
     generator = SA_UNet_Generator(in_channels= args.channels)
