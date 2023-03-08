@@ -68,7 +68,7 @@ elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "PA-UNet"):
     generator = PA_UNet_Generator(in_channels= args.channels)
-elif(args.model == "SA-UNet"):
+elif(args.model == "SA-Unet"):
     generator = SA_UNet_Generator(in_channels= args.channels)
 
 generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"G_chkp_{args.epoch}.pth") ))
@@ -96,9 +96,9 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
     if(args.type_model == "attention" and (args.model == "SA-Unet")):
-        fake_out, _ = generator(real_in)
-    elif(args.type_model == "attention" and (args.model != "SA-Unet")):
         fake_out, _, _ = generator(real_in)
+    elif(args.type_model == "attention" and (args.model != "SA-Unet")):
+        fake_out, _ = generator(real_in)
     else:
         fake_out    = generator(real_in)
 

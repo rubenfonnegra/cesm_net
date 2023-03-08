@@ -318,7 +318,7 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference=True, o
 
             if (attention):
                 
-                os.makedirs(os.path_join(output_attn, str(l)), exist_ok = True)
+                os.makedirs(os.path.join(output_attn, str(l)), exist_ok = True)
                 for key, value in dictOutput.items():
                     value = value.cpu().detach().numpy()
                     np.save(f"{output_attn}/{str(l)}/{key}.npy", value)
