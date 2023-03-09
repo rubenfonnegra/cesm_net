@@ -248,6 +248,58 @@ class US_block(nn.Module):
         out = torch.cat( (out, skip_input), dim = 1)
         out = self.convOut( out )
         return out
+
+
+"""
+***************************************************************
+******* Implementation Upsampling with Pixel Attention ********
+***************************************************************
+"""
+
+class US_block_PA(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.convT1 = nn.ConvTranspose2d(
+                in_channels     = in_channels,
+                out_channels    = out_channels,
+                kernel_size     = 3,
+                stride          = (2, 2), #2
+                padding         = 1, 
+                #bias = True
+            )
+        
+        self.bn1 = nn.BatchNorm2d(
+                out_channels,
+                momentum        =  0.8 
+            )
+
+        self.pixel_attn1 = PixelAttention(in_channels)
+        
+        self.relu = nn.ReLU()
+
+        self.convOut = nn.Conv2d(
+            in_channels         = in_channels,
+            out_channels        = out_channels,
+            kernel_size         = 3,
+            stride              = 1,
+            padding             = 'same'
+        )
+    
+    def forward(self, input_layer, skip_input ):
+        
+        output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
+        out = self.convT1( input_layer, output_size = output_size)
+        out = self.bn1  ( out )
+        out = self.relu( out )
+        out = torch.cat( (out, skip_input), dim = 1)
+        out, attn = self.pixel_attn1(out)
+        out = self.convOut( out )
+        return out, attn
     
 """
 ---------- Implementation of DownSampling Block -----------

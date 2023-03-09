@@ -63,7 +63,7 @@ if( not( args.img_complete )):
 
 # Initialize generator and discriminator
 if(args.model == "Unet"):
-    generator = UNet_Generator(in_channels = args.channels)
+    generator = UNet_Generator_UP_PA(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "PA-Unet"):

@@ -1,7 +1,7 @@
 __pycache__/
 .ipynb_checkpoints/
 .vscode/
-Results/
+Results
 Data
 wandb/
-/*.sh
+run.sh

@@ -50,6 +50,8 @@ def run_model(args):
         generator = PA_UNet_Generator(in_channels= args.channels)
     elif(args.model == "SA-Unet"):
         generator = SA_UNet_Generator(in_channels= args.channels)
+    elif(args.model == "Unet-RPA-UPA"):
+        generator = Unet_RPA_UPA(in_channels= args.channels)
     
     summary(generator, input_size=(5, 1, 256,256))
     
