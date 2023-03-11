@@ -208,22 +208,22 @@ class UNet_Generator_UP_PA(nn.Module):
         out = self.reluFusion(out)              # (B, 1024, 8, 8)
 
         """ Upsampling Block Forward """
-        out = self.US1( out, outRB5 )           # (B, 512, 16, 16)
-        out = self.RB6( out )                   # (B, 512, 16, 16)
-        out = self.US2( out, outRB4 )           # (B, 256, 32, 32)
-        out = self.RB7( out )                   # (B, 256, 32, 32)
-        out = self.US3(out, outRB3 )            # (B, 128, 64, 64)
-        out = self.RB8(out)                     # (B, 128, 64, 64)
-        out = self.US4(out, outRB2 )            # (B, 64, 128, 128)
-        out = self.RB9(out)                     # (B, 64, 128, 128)
-        out = self.US5(out, outRB1 )            # (B, 32, 256, 256)
-        out = self.RB10(out)                    # (B, 32, 256, 256)
+        out, attn1  = self.US1( out, outRB5 )           # (B, 512, 16, 16)
+        out         = self.RB6( out )                   # (B, 512, 16, 16)
+        out, attn2  = self.US2( out, outRB4 )           # (B, 256, 32, 32)
+        out         = self.RB7( out )                   # (B, 256, 32, 32)
+        out, attn3  = self.US3(out, outRB3 )            # (B, 128, 64, 64)
+        out         = self.RB8(out)                     # (B, 128, 64, 64)
+        out, attn4  = self.US4(out, outRB2 )            # (B, 64, 128, 128)
+        out         = self.RB9(out)                     # (B, 64, 128, 128)
+        out, attn5  = self.US5(out, outRB1 )            # (B, 32, 256, 256)
+        out         = self.RB10(out)                    # (B, 32, 256, 256)
 
         """ Output Convolution """
         out = self.convOut(out)                 # (B, 1, 256, 256)
         out = self.actOut(out)                  # (B, 1, 256, 256)
         
-        return out
+        return out, None
 
 
 
@@ -580,7 +580,7 @@ class Residual_PA_UNet_Generator(nn.Module):
         )
 
         """ DownSampling Block """
-        self.RB1    = R_block( 32, 32)
+        self.RPA0    = Residual_PA_block( 32, 32)
         self.DS1    = DS_block(32,64)
         self.RPA1   = Residual_PA_block(64,64)
         self.DS2    = DS_block(64,128)
@@ -629,7 +629,7 @@ class Residual_PA_UNet_Generator(nn.Module):
         
         """ DownSampling Block Forward """
         outConvInit         = self.convInput(img_input)     # (B, 32, 256, 256)
-        outRB1              = self.RB1(outConvInit)         # (B, 32, 256, 256)
+        outRB1, attn0       = self.RPA0(outConvInit)         # (B, 32, 256, 256)
         outDS               = self.DS1(outRB1)              # (B, 64, 128, 128)
         outRPA1, attn1      = self.RPA1(outDS)              # (B, 64, 128, 128)
         outDS               = self.DS2(outRPA1)             # (B, 128, 64, 64)

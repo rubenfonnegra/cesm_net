@@ -11,13 +11,30 @@ import argparse
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+def crop_image_only_outside(im_input_, im_output_, tol=0):
+    
+    mask = im_output_ > 0
+
+    # Coordinates of non-black pixels.
+    coords = np.argwhere(mask)
+
+    # Bounding box of non-black pixels.
+    x0, y0 = coords.min(axis=0)
+    x1, y1 = coords.max(axis=0) + 1   # slices are exclusive at the top
+
+    # Get the contents of the bounding box.
+    im_input_cropped = im_input_[x0:x1, y0:y1]
+    im_output_cropped = im_output_[x0:x1, y0:y1]
+    
+    return im_input_cropped, im_output_cropped
+
 
 parser = argparse.ArgumentParser(description= "Training GANs using CA loss")
     
 # Configs  
 parser.add_argument("--name_exp_fig", type=str, default="", help="name of the experiment in the fig")
 parser.add_argument("--path_results", type=str, default="Results/", help="Results path")
-parser.add_argument("--path_data", type=str, default="/media/mirplab/TB2/Experiments-Mammography/01_Data/data_img_complete/", help="Data path")
+parser.add_argument("--path_data", type=str, default="Data/sura_full_images/", help="Data path")
 parser.add_argument("--projection", type=str, default="CC")
 parser.add_argument("--format", type=str, default="tif")
 parser.add_argument("--workers", type=int, default=12)
@@ -46,43 +63,49 @@ epoch           = args.epoch
 name_exp        = {
 
     "Exp1": {
-        "name_exp": "unet_CC_bg_20_01",
-        "path_exp": "Results/02-exp-bg-borde/unet_CC_bg_20_01/",
-        "name_fig": "SA-Unet-bg-20",
-        "model"   : "UNet"
+        "name_exp": "Unet_sura_full_image_CC/",
+        "path_exp": "Results/03-sura-full-image/01_Unet/Unet_sura_full_image_CC/",
+        "name_fig": "Unet",
+        "model"   : "Unet",
+        "type_model": "Unet"
     },
 
     "Exp2": {
-        "name_exp": "residual-PA2-unet-data-image-complete",
-        "path_exp": "Results/04-Exp-Image-Complete/residual-PA2-unet-data-image-complete/",
-        "name_fig": "R-PA-Unet-Comp",
-        "model"   : "Residual-PA-Unet"
+        "name_exp": "Residual_PA_sura_full_image_CC/",
+        "path_exp": "Results/03-sura-full-image/02_Residual_PA/Residual_PA_sura_full_image_CC/",
+        "name_fig": "Residual PA Encoder",
+        "model"   : "Residual-PA-Unet",
+        "model"   : "Residual-PA-Unet",
+        "type_model": "attention"
     },
 
     "Exp3":{
-        "name_exp": "SA-Unet-Generator-data-image-complete",
-        "path_exp": "Results/04-Exp-Image-Complete/SA-Unet-Generator-data-image-complete/",
-        "name_fig": "SA-Unet-Comp",
-        "model"   : "UNet"
+        "name_exp": "unet_UP_PA_sura_full_image_CC/",
+        "path_exp": "Results/03-sura-full-image/05-Unet-UP-PA/unet_UP_PA_sura_full_image_CC/",
+        "name_fig": "residual PA Decoder",
+        "model"   : "Unet-UP",
+        "type_model": "attention"
     },
 
     "Exp4":{
-        "name_exp": "residual-PA2-unet-image-complete-crop-2",
-        "path_exp": "Results/04-Exp-Image-Complete/residual-PA2-unet-image-complete-crop-2/",
-        "name_fig": "R-PA-Unet-Comp-Crop",
-        "model"   : "Residual-PA-Unet"
+        "name_exp": "SA_unet_sura_full_image_CC/",
+        "path_exp": "Results/03-sura-full-image/03-SA-Unet/SA_unet_sura_full_image_CC/",
+        "name_fig": "Unet Self-Attention",
+        "model"   : "SA-Unet",
+        "type_model": "attention"
     },
 
     "Exp5":{
-        "name_exp": "self-attention-unet-image-complete-crop",
-        "path_exp": "Results/04-Exp-Image-Complete/self-attention-unet-image-complete-crop/",
-        "name_fig": "SA-Unet-Comp-Crop",
-        "model"   : "UNet"
+        "name_exp": "PA_Unet_sura_Full_image_CC/",
+        "path_exp": "Results/03-sura-full-image/04-PA-Unet/PA_Unet_sura_Full_image_CC/",
+        "name_fig": "Unet Pixel-Attention",
+        "model"   : "PA-Unet",
+        "type_model": "attention"
     },
 }
 
 imgs_exps, img_real, names_exps = [], [], []
-path_output = os.path.join( path_results, "comparation_exp")
+path_output = os.path.join( path_results, "comparation_exp", "Sura Full Image", "CC")
 os.makedirs( path_output, exist_ok=True )
 
 transforms_ = [
@@ -94,20 +117,29 @@ data_loader = Loader ( data_path = path_data, proj = projection, format = format
                            batch_size = batch_size, img_res=(image_size, image_size), n_channels = channels,
                            transforms = transforms_, dataset_name = dataset_name, img_complete = True)
 
-data_loader = data_loader.test_img_complete_generator
+data_loader = data_loader.test_generator
 
 for i, exp in enumerate(name_exp):
     
     path_exp    = name_exp[exp]["path_exp"]
     model       = name_exp[exp]["model"]
     name_fig    = name_exp[exp]["name_fig"]
+    type_model  = name_exp[exp]["type_model"]
     Tensor = torch.cuda.FloatTensor
     
     # Initialize generator and discriminator
-    if(model == "UNet"):
-        generator = SA_UNet_Generator(in_channels = channels)
+    if(model == "Unet"):
+        generator = UNet_Generator(in_channels = args.channels)
     elif(model == "Residual-PA-Unet"):
-        generator = Residual_PA_UNet_Generator(in_channels= channels)
+        generator = Residual_PA_UNet_Generator(in_channels= args.channels)
+    elif(model == "PA-Unet"):
+        generator = PA_UNet_Generator(in_channels= args.channels)
+    elif(model == "SA-Unet"):
+        generator = SA_UNet_Generator(in_channels= args.channels)
+    elif(model == "Unet-RPA-UPA"):
+            generator = Unet_RPA_UPA(in_channels= args.channels)
+    elif(model == "Unet-UP"):
+            generator = UNet_Generator_UP_PA(in_channels= args.channels)
 
     generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", "G_chkp_400.pth") ))
     print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', 'G_chkp_400.pth')}")
@@ -123,10 +155,12 @@ for i, exp in enumerate(name_exp):
         real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
         real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-        if(model == "UNet"):
-            fake_out    = generator(real_in)
-        else:
+        if(type_model == "attention" and (model == "SA-Unet")):
+            fake_out, _, _ = generator(real_in)
+        elif(type_model == "attention" and (model != "SA-Unet")):
             fake_out, _ = generator(real_in)
+        else:
+            fake_out    = generator(real_in)
 
         """ Convert torchs tensor to numpy arrays """
         real_in     = real_in.data.cpu().numpy()[0,0,...]
@@ -180,8 +214,8 @@ for img in range(imgs_exps.shape[1]):
         plt.colorbar(im, cax=cax)
 
         if(e == 0):
-            axes[e,0].set_title("Real Substracted")
-            axes[e,1].set_title("Fake Substracted")
+            axes[e,0].set_title("Real Recombined")
+            axes[e,1].set_title("Fake Recombined")
             axes[e,2].set_title("Difference Map")
     
     plt.subplots_adjust(
