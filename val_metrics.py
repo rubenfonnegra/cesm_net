@@ -14,9 +14,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import peak_signal_noise_ratio as psnr
 from torchmetrics.functional import mean_absolute_error as mae
-#from torchmetrics.functional import multiscale_structural_similarity_index_measure as mssim
-from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
-
+from torchmetrics.functional import multiscale_structural_similarity_index_measure as mssim
 
 def save_figs(real_in, real_out, fake_out, map_dif, dir_save):
     
@@ -146,7 +144,7 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
         fake_out    = generator(real_in)
     
     ssim_   = ssim(fake_out, real_out, data_range=1.).cpu().detach().numpy()
-    mssim_  = ms_ssim(fake_out, real_out, data_range=1.).cpu().detach().numpy()
+    mssim_  = mssim(fake_out, real_out, data_range=1.).cpu().detach().numpy()
     psnr_   = psnr(fake_out, real_out, data_range=1.).cpu().detach().numpy()
     mae_    = mae(fake_out, real_out).cpu().detach().numpy()
 
