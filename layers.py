@@ -352,10 +352,10 @@ class Self_Attention(nn.Module):
         self.query          = nn.Conv2d(inChannels, embedding_channels, 1)
         self.value          = nn.Conv2d(inChannels, embedding_channels, 1)
         self.self_att       = nn.Conv2d(embedding_channels, inChannels, 1)
-        self.gamma          = nn.Parameter(torch.tensor(1.0))
+        #self.gamma          = nn.Parameter(torch.tensor(1.0))
         self.softmax        = nn.Softmax(dim=1)
 
-    def forward(self,x):
+    def forward(self,x, gamma):
         """
             inputs:
                 x: input feature map [Batch, Channel, Height, Width]
@@ -376,5 +376,5 @@ class Self_Attention(nn.Module):
         v = v.view(batchsize, -1, H, W)                 # Recover input shape   [B, C_bar, H, W]
         o = self.self_att(v)                            # Self-Attention output [B, C, H, W]
         
-        y = self.gamma * o + x                          # Learnable gamma + residual
-        return y, o, self.gamma
+        y = gamma * o + x                               # Learnable gamma + residual
+        return y, o, gamma

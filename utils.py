@@ -314,7 +314,7 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference=True, o
         real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
         
         if(args.type_model == "attention" and args.model == "SA-Unet"):
-            fake_out, dictOutput, _ = generator(real_in)
+            fake_out, dictOutput, _ = generator(real_in, args.epoch)
 
             if (attention):
                 

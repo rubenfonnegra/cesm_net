@@ -137,7 +137,7 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
     if(args.type_model == "attention" and (args.model == "SA-Unet")):
-        fake_out, _, _ = generator(real_in)
+        fake_out, _, _ = generator(real_in, args.epoch)
     elif(args.type_model == "attention" and (args.model != "SA-Unet")):
         fake_out, _ = generator(real_in)
     else:

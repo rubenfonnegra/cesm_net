@@ -53,7 +53,7 @@ def run_model(args):
     elif(args.model == "Unet-RPA-UPA"):
         generator = Unet_RPA_UPA(in_channels= args.channels)
     
-    summary(generator, input_size=(5, 1, 256,256))
+    #summary(generator, input_size=(5, 1, 256,256))
     
     # Choose correct type of D
     if args.generate:
@@ -183,7 +183,7 @@ def run_model(args):
             optimizer_G.zero_grad()
 
             if ((args.type_model == "attention") and (args.model == "SA-Unet")):
-                fake_out, _, gamma = generator(real_in)
+                fake_out, _, gamma = generator(real_in, epoch)
             elif ((args.type_model == "attention") and (args.model != "SA-Unet")):
                 fake_out, _ = generator(real_in)
             else:
