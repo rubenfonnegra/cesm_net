@@ -273,13 +273,23 @@ def run_model(args):
                 
                 if args.use_wandb:
                     
-                    wandb.log(
-                        {
-                        "Batch/G": loss_G.item(),
-                        "Batch/G_Pixel_Loss": loss_pixel.item(),
-                        },
-                        step=(epoch*args.batch_size)+i
-                    )
+                    if(args.model == "SA-Unet"):
+                        wandb.log(
+                            {
+                            "Batch/G": loss_G.item(),
+                            "Batch/G_Pixel_Loss": loss_pixel.item(),
+                            "Gamma Attn1": gamma.cpu().detach().numpy(),
+                            },
+                            step=(epoch*args.batch_size)+i
+                        )
+                    else:
+                        wandb.log(
+                            {
+                            "Batch/G": loss_G.item(),
+                            "Batch/G_Pixel_Loss": loss_pixel.item(),
+                            },
+                            step=(epoch*args.batch_size)+i
+                        )
         
         # save avg stats to logger
         avg_logs = []
