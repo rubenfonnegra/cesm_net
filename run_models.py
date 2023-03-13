@@ -24,7 +24,7 @@ def main():
     # Custom configs
     ### Main adv loss
     parser.add_argument("--type_model", help="Type model to use.", default = "attention", choices=["Unet", "GAN", "attention"])
-    parser.add_argument("--model", help="Model to use.", default = "SA-Unet", choices=["Unet", "GAN", "Residual-PA-Unet", "PA-Unet", "SA-Unet", "Unet-RPA-UPA"])
+    parser.add_argument("--model", help="Model to use.", default = "SA-Unet", choices=["Unet", "GAN", "Residual-PA-Unet", "PA-Unet", "SA-Unet", "Unet-RPA-UPA", "PA-Unet-v3"])
 
     # Dataset params
     parser.add_argument("--projection", type=str, default="CC", help="Projection in which mammograms were taken")

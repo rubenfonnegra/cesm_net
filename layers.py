@@ -378,3 +378,49 @@ class Self_Attention(nn.Module):
         
         y = gamma * o + x                               # Learnable gamma + residual
         return y, o, gamma
+
+
+"""
+---------- Implementation of UpSampling Block Skip Attention -----------
+"""
+class US_block_Skip_Attn(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.convT1 = nn.ConvTranspose2d(
+                in_channels     = in_channels,
+                out_channels    = out_channels,
+                kernel_size     = 3,
+                stride          = (2, 2), #2
+                padding         = 1, 
+                #bias = True
+            )
+        
+        self.bn1 = nn.BatchNorm2d(
+                out_channels,
+                momentum        =  0.8 
+            )
+        
+        self.relu = nn.ReLU()
+
+        self.convOut = nn.Conv2d(
+            in_channels         = out_channels,
+            out_channels        = out_channels,
+            kernel_size         = 3,
+            stride              = 1,
+            padding             = 'same'
+        )
+    
+    def forward(self, input_layer, skip_attn ):
+        
+        input = torch.add(input_layer, skip_attn)
+        output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
+        out = self.convT1( input, output_size = output_size)
+        out = self.bn1  ( out )
+        out = self.relu( out )
+        out = self.convOut( out )
+        return out

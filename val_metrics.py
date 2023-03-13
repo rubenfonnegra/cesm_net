@@ -97,7 +97,7 @@ if( not( args.img_complete )):
 
 # Initialize generator and discriminator
 if(args.model == "Unet"):
-    generator = UNet_Generator(in_channels = args.channels)
+        generator = UNet_Generator(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "PA-Unet"):
@@ -105,9 +105,9 @@ elif(args.model == "PA-Unet"):
 elif(args.model == "SA-Unet"):
     generator = SA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "Unet-RPA-UPA"):
-        generator = Unet_RPA_UPA(in_channels= args.channels)
-elif(args.model == "Unet-UP"):
-        generator = UNet_Generator_UP_PA(in_channels= args.channels)
+    generator = Unet_RPA_UPA(in_channels= args.channels)
+elif(args.model == "PA-Unet-v3"):
+    generator = PA_UNet_Generator_V3(in_channels= args.channels)
 
 generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"G_chkp_{args.epoch}.pth") ))
 print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', f'G_chkp_{args.epoch}.pth')}")
