@@ -417,9 +417,9 @@ class US_block_Skip_Attn(nn.Module):
     
     def forward(self, input_layer, skip_attn ):
         
-        input = torch.add(input_layer, skip_attn)
         output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
-        out = self.convT1( input, output_size = output_size)
+        out = self.convT1( input_layer, output_size = output_size)
+        out = torch.mul(out, skip_attn)
         out = self.bn1  ( out )
         out = self.relu( out )
         out = self.convOut( out )
