@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 """
----------- Implementation of PixelAttention2D Block -----------
+---------- Implementation of PixelAttention2D Block ----------
 
 Based in visual-attention-tf: https://github.com/vinayak19th/Visual_attention_tf/blob/main/build/lib/visual_attention/pixel_attention.py
 
