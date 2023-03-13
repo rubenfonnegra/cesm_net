@@ -751,14 +751,8 @@ class SA_UNet_Generator(nn.Module):
         )
         
         self.actOut = nn.Sigmoid()
-        self.gamma  = torch.tensor(0.) 
     
-    def forward(self, img_input, epoch):
-
-        if(epoch == 400):
-            self.gamma = torch.tensor(2.)
-        elif((epoch%100) == 0 and (epoch != 0)):
-            self.gamma = self.gamma + 0.5
+    def forward(self, img_input, gamma_):
         
         """ DownSampling Block Forward """
         outConvInit                 = self.convInput(img_input)         # (B, 32, 256, 256)
@@ -767,7 +761,7 @@ class SA_UNet_Generator(nn.Module):
         outRB2                      = self.RB2(outDS)                   # (B, 64, 128, 128)
         outDS                       = self.DS2(outRB2)                  # (B, 128, 64, 64)
         outRB3                      = self.RB3(outDS)                   # (B, 128, 64, 64)
-        outAttn1, attnMaps1, gamma  = self.attn1(outRB3, self.gamma)    # (B, 128, 64, 64)
+        outAttn1, attnMaps1, gamma  = self.attn1(outRB3, gamma_)        # (B, 128, 64, 64)
         outDS                       = self.DS3(outAttn1)                # (B, 256, 32, 32)
         outRB4                      = self.RB4(outDS)                   # (B, 256, 32, 32)
         outDS                       = self.DS4(outRB4)                  # (B, 512, 16, 16)

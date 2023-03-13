@@ -162,10 +162,15 @@ def run_model(args):
     print ("\n [*] -> Starting training....\n\n")
     prev_time = time.time()
 
+    gamma_ = torch.tensor(0.0)
+
     for epoch in range(args.epoch, args.n_epochs):
         
         epoch_stats, it = {}, 0
         for name in tb_names: epoch_stats[name] = []
+
+        if(epoch %100 == 0) and (epoch !=0):
+            gamma_ = gamma_ + 0.5
 
         for i in range(0, len(data_loader), args.batch_size):
 
@@ -183,7 +188,7 @@ def run_model(args):
             optimizer_G.zero_grad()
 
             if ((args.type_model == "attention") and (args.model == "SA-Unet")):
-                fake_out, _, gamma = generator(real_in, epoch)
+                fake_out, _, gamma = generator(real_in, gamma_)
             elif ((args.type_model == "attention") and (args.model != "SA-Unet")):
                 fake_out, _ = generator(real_in)
             else:
