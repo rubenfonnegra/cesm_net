@@ -377,8 +377,9 @@ class US_block_Skip_Attn(nn.Module):
         
         output_size = [input_layer.size()[2]*2, input_layer.size()[2]*2]
         out = self.convT1( input_layer, output_size = output_size)
-        out = torch.add(out, skip_attn)
+        #out = torch.add(out, skip_attn)
         out = self.bn1  ( out )
         out = self.relu( out )
+        out = torch.add(out, skip_attn)
         out = self.convOut( out )
         return out
