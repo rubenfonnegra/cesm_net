@@ -2,6 +2,8 @@ from importlib.resources import path
 import os, csv
 from torch import real
 from tqdm import tqdm
+from models.models import *
+from models.SA_Unet import *
 from dataloader import *
 import torchvision.transforms as transforms
 from torch.autograd import Variable
@@ -97,13 +99,15 @@ if( not( args.img_complete )):
 
 # Initialize generator and discriminator
 if(args.model == "Unet"):
-        generator = UNet_Generator(in_channels = args.channels)
+    generator = UNet_Generator(in_channels = args.channels)
 elif(args.model == "Residual-PA-Unet"):
     generator = Residual_PA_UNet_Generator(in_channels= args.channels)
 elif(args.model == "PA-Unet"):
     generator = PA_UNet_Generator(in_channels= args.channels)
-elif(args.model == "SA-Unet"):
-    generator = SA_UNet_Generator(in_channels= args.channels)
+elif(args.model == "SA-Unet-v1"):
+    generator = SA_Unet_v1(in_channels= args.channels)
+elif(args.model == "SA-Unet-v2"):
+    generator = SA_Unet_v2(in_channels= args.channels)
 elif(args.model == "Unet-RPA-UPA"):
     generator = Unet_RPA_UPA(in_channels= args.channels)
 elif(args.model == "PA-Unet-v3"):
@@ -112,6 +116,7 @@ elif(args.model == "PA-Unet-v3"):
 generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", f"G_chkp_{args.epoch}.pth") ))
 print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', f'G_chkp_{args.epoch}.pth')}")
 
+generator.eval()
 generator.cuda()
 
 if( args.sample_size < len(data_loader_c)):
@@ -136,8 +141,12 @@ for k, l in tqdm(enumerate(lucky_c), ncols=100):
     real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
     real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
 
-    if(args.type_model == "attention" and (args.model == "SA-Unet")):
-        fake_out, _, _ = generator(real_in, args.epoch)
+    if(args.type_model == "attention" and (args.model == "SA-Unet-v1")):
+        fake_out, _, _ = generator(real_in)
+    elif(args.type_model == "attention" and (args.model == "SA-Unet-v2")):
+        fake_out, _, _= generator(real_in)
+    elif(args.type_model == "attention" and (args.model == "SA-Unet")):
+        fake_out, _, _, = generator(real_in)
     elif(args.type_model == "attention" and (args.model != "SA-Unet")):
         fake_out, _ = generator(real_in)
     else:

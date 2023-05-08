@@ -1,4 +1,5 @@
  
+from math import gamma
 import os
 import sys
 import time
@@ -8,6 +9,8 @@ import itertools
 from matplotlib.pyplot import step
 import numpy as np
 import warnings
+
+from models.SA_Unet import *
 warnings.filterwarnings("ignore")
 from torchinfo import summary
 import torch
@@ -15,10 +18,10 @@ import torch.nn.functional as F
 import shutil
 from torch.autograd import Variable
 import torchvision.transforms as transforms
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, MultiStepLR
 
 from utils import *
-from models import *
+from models.models import *
 from dataloader import *
 
 
@@ -29,6 +32,8 @@ def setup_configs(args):
     args.result_dir = args.result_dir + "/%s" % args.exp_name
     
     for name in glob.glob('*.py'):
+        shutil.copyfile( os.path.join(".", name), os.path.join(args.result_dir, "code", name))
+    for name in glob.glob('*.sh'):
         shutil.copyfile( os.path.join(".", name), os.path.join(args.result_dir, "code", name))
 
     if not args.model and not args.generate: 
@@ -48,8 +53,12 @@ def run_model(args):
         generator = Residual_PA_UNet_Generator(in_channels= args.channels)
     elif(args.model == "PA-Unet"):
         generator = PA_UNet_Generator(in_channels= args.channels)
-    elif(args.model == "SA-Unet"):
-        generator = SA_UNet_Generator(in_channels= args.channels)
+    elif(args.model == "SA-Unet-v1"):
+        generator = SA_Unet_v1(in_channels= args.channels, gamma = args.gamma)
+    elif(args.model == "SA-Unet-v2"):
+        generator = SA_Unet_v2(in_channels= args.channels)
+    elif(args.model == "SA-Unet-v3"):
+        generator = SA_Unet_v3(in_channels= args.channels)
     elif(args.model == "Unet-RPA-UPA"):
         generator = Unet_RPA_UPA(in_channels= args.channels)
     elif(args.model == "PA-Unet-v3"):
@@ -137,6 +146,7 @@ def run_model(args):
 
     # Optimizer
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
+    scheduler = MultiStepLR(optimizer_G, milestones=[300], gamma=0.1)
         
     if args.type_model == "GAN": 
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
@@ -164,15 +174,10 @@ def run_model(args):
     print ("\n [*] -> Starting training....\n\n")
     prev_time = time.time()
 
-    gamma_ = torch.tensor(0.0)
-
     for epoch in range(args.epoch, args.n_epochs):
         
         epoch_stats, it = {}, 0
         for name in tb_names: epoch_stats[name] = []
-
-        if(epoch %100 == 0) and (epoch !=0):
-            gamma_ = gamma_ + 0.5
 
         for i in range(0, len(data_loader), args.batch_size):
 
@@ -189,12 +194,11 @@ def run_model(args):
 
             optimizer_G.zero_grad()
 
-            if ((args.type_model == "attention") and (args.model == "SA-Unet")):
-                fake_out, _, gamma = generator(real_in, gamma_)
-            elif ((args.type_model == "attention") and (args.model != "SA-Unet")):
-                fake_out, _ = generator(real_in)
+
+            if ((args.type_model == "attention") and (args.model == "SA-Unet-v2") and epoch == 200):
+                fake_out, _, gamma = generator(real_in, True)
             else:
-                fake_out    = generator(real_in)
+                fake_out, _, gamma = generator(real_in)
 
             if args.type_model != "GAN":
                 loss_GAN = torch.tensor(0)
@@ -208,11 +212,25 @@ def run_model(args):
                 loss_GAN = GAN_loss(fake_pred, valid)
                         
             # Pixel-wise loss
-            loss_pixel = pixelwise_loss(fake_out, real_out) 
+
+            mask_bg     = (real_out==0.0) * 1
+            mask_breast = (real_out>0.0) * 1
+
+            real_out_bg     = real_out * mask_bg
+            fake_out_bg     = fake_out * mask_bg
+
+            real_out_breast     = real_out * mask_breast
+            fake_out_breast     = fake_out * mask_breast
+
+            loss_pixel_breast   = pixelwise_loss(fake_out_breast, real_out_breast)
+            loss_pixel_bg       = pixelwise_loss(fake_out_bg, real_out_bg)
+            loss_pixel = (0.8 * loss_pixel_breast) + (0.2 * loss_pixel_bg)
+            
+            loss_general    = pixelwise_loss(fake_out, real_out)
             loss_G = (loss_pixel * lambda_pixel) + loss_GAN
             
             loss_G.backward()
-            optimizer_G.step()
+            scheduler.step()
 
             # ------------------------------------
             #          Train Discriminator
@@ -251,7 +269,7 @@ def run_model(args):
 
                 # Print log
                 sys.stdout.write(
-                    "\r[Epoch %d/%d][Batch %d/%d][D loss: %f][G loss: %f, adv: %f, pixel: %f] ETA: %s" # 
+                    "\r[Epoch %d/%d][Batch %d/%d][D loss: %f][G loss: %f, adv: %f, pixel: %f] ETA: %s, Loss_Bg: %f, Loss_breast: %f, Loss_General: %f" # 
                     % (
                         epoch,
                         args.n_epochs,
@@ -262,6 +280,10 @@ def run_model(args):
                         loss_GAN.item(),
                         loss_pixel.item(),
                         'ETA: %d:%d:%d' %(hours,minutes,seconds),
+                        loss_pixel_bg.item(),
+                        loss_pixel_breast.item(),
+                        loss_general.item()
+                        
                     )
                 )
 
@@ -280,7 +302,19 @@ def run_model(args):
                 
                 if args.use_wandb:
                     
-                    if(args.model == "SA-Unet"):
+                    if(args.model == "SA-Unet-v1"):
+                        wandb.log(
+                            {
+                            "Batch/G":                  loss_G.item(),
+                            "Batch/G_Pixel_Loss":       loss_pixel.item(),
+                            "Batch/Loss_Breast":        loss_pixel_breast.item(),
+                            "Batch/Loss_Background":    loss_pixel_bg.item(),
+                            "Batch/Loss_General":       loss_general.item(),
+                            "Batch/Gamma":              gamma.detach().cpu()
+                            },
+                            step=(epoch*args.batch_size)+i
+                        )
+                    elif(args.model == "SA-Unet-v2"):
                         wandb.log(
                             {
                             "Batch/G": loss_G.item(),
@@ -292,8 +326,11 @@ def run_model(args):
                     else:
                         wandb.log(
                             {
-                            "Batch/G": loss_G.item(),
-                            "Batch/G_Pixel_Loss": loss_pixel.item(),
+                            "Batch/G":                  loss_G.item(),
+                            "Batch/G_Pixel_Loss":       loss_pixel.item(),
+                            "Batch/Loss_Breast":        loss_pixel_breast.item(),
+                            "Batch/Loss_Background":    loss_pixel_bg.item(),
+                            "Batch/Loss_General":       loss_general.item(),
                             },
                             step=(epoch*args.batch_size)+i
                         )
@@ -321,10 +358,11 @@ def run_model(args):
             # Save model checkpoints
             os.makedirs("%s/saved_models/" % (args.result_dir), exist_ok = True)
             torch.save(generator.state_dict(), "{0}/saved_models/G_chkp_{1:03d}.pth".format(args.result_dir, epoch))
+            torch.save(gamma, "{0}/saved_models/Gamma_chkp_{1:03d}.pth".format(args.result_dir, epoch))
             if args.type_model == "GAN": 
                 torch.save(discriminator.state_dict(), "{0}/saved_models/D_chkp_{1:03d}.pth".format(args.result_dir, epoch))
 
-        # If at sample interval save image
+        #If at sample interval save image
         if epoch % args.sample_interval == 0:
             
             if(not(args.img_complete)):

@@ -313,8 +313,18 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference=True, o
         real_in  = Variable(img["in" ].type(Tensor)); real_in = real_in[None, :]
         real_out = Variable(img["out"].type(Tensor)); real_out = real_out[None, :]
         
-        if(args.type_model == "attention" and args.model == "SA-Unet"):
-            fake_out, dictOutput, _ = generator(real_in, args.epoch)
+        if(args.type_model == "attention" and args.model == "SA-Unet-v1"):
+            fake_out, dictOutput, _ = generator(real_in)
+
+            if (attention):
+                
+                os.makedirs(os.path.join(output_attn, str(l)), exist_ok = True)
+                for key, value in dictOutput.items():
+                    value = value.cpu().detach().numpy()
+                    np.save(f"{output_attn}/{str(l)}/{key}.npy", value)
+        
+        elif(args.type_model == "attention" and args.model == "SA-Unet-v2"):
+            fake_out, dictOutput, _, = generator(real_in)
 
             if (attention):
                 
@@ -325,6 +335,16 @@ def plot_imgs(args, lucky, dataloader, output_dir, generator, difference=True, o
 
         elif(args.type_model == "attention" and args.model != "SA-Unet"):
             fake_out, dictOutput, = generator(real_in)
+
+            if (attention):
+                
+                os.makedirs(os.path.join(output_attn, str(l)), exist_ok = True)
+                for key, value in dictOutput.items():
+                    value = value.cpu().detach().numpy()
+                    np.save(f"{output_attn}/{str(l)}/{key}.npy", value)
+        
+        elif(args.type_model == "attention" and args.model == "SA-Unet"):
+            fake_out, dictOutput, _ = generator(real_in)
 
             if (attention):
                 

@@ -4,12 +4,13 @@ from tqdm import tqdm
 from dataloader import *
 import torchvision.transforms as transforms
 from torch.autograd import Variable
-from models import *
 from metrics import *
 import matplotlib.pyplot as plt
 import argparse
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from models.SA_Unet import *
+from models.models import *
 
 def crop_image_only_outside(im_input_, im_output_, tol=0):
     
@@ -63,43 +64,34 @@ epoch           = args.epoch
 name_exp        = {
 
     "Exp1": {
-        "name_exp": "Unet_sura_full_image_CC/",
-        "path_exp": "Results/03-sura-full-image/01_Unet/Unet_sura_full_image_CC/",
-        "name_fig": "Unet",
-        "model"   : "Unet",
-        "type_model": "Unet"
+        "name_exp": "SA_Unet_v1_lr_1e3_gamm_05",
+        "path_exp": "Results/02-Exp-March17-March24/",
+        "name_fig": "SA Unet v1",
+        "model"   : "SA-Unet-v1",
+        "type_model": "attention"
     },
 
     "Exp2": {
-        "name_exp": "Residual_PA_sura_full_image_CC/",
-        "path_exp": "Results/03-sura-full-image/02_Residual_PA/Residual_PA_sura_full_image_CC/",
-        "name_fig": "Residual PA Encoder",
-        "model"   : "Residual-PA-Unet",
-        "model"   : "Residual-PA-Unet",
+        "name_exp": "SA_Unet_v2_lr_1e3_gamm_05",
+        "path_exp": "Results/02-Exp-March17-March24/",
+        "name_fig": "SA Unet v2",
+        "model"   : "SA-Unet-v2",
         "type_model": "attention"
     },
 
     "Exp3":{
-        "name_exp": "unet_UP_PA_sura_full_image_CC/",
-        "path_exp": "Results/03-sura-full-image/05-Unet-UP-PA/unet_UP_PA_sura_full_image_CC/",
-        "name_fig": "residual PA Decoder",
-        "model"   : "Unet-UP",
+        "name_exp": "SA_Unet_v1_lr_1e3_gamm_05_MSE",
+        "path_exp": "Results/02-Exp-March17-March24/",
+        "name_fig": "SA Unet v1 MSE",
+        "model"   : "SA-Unet-v1",
         "type_model": "attention"
     },
 
     "Exp4":{
-        "name_exp": "SA_unet_sura_full_image_CC/",
-        "path_exp": "Results/03-sura-full-image/03-SA-Unet/SA_unet_sura_full_image_CC/",
-        "name_fig": "Unet Self-Attention",
-        "model"   : "SA-Unet",
-        "type_model": "attention"
-    },
-
-    "Exp5":{
-        "name_exp": "PA_Unet_sura_Full_image_CC/",
-        "path_exp": "Results/03-sura-full-image/04-PA-Unet/PA_Unet_sura_Full_image_CC/",
-        "name_fig": "Unet Pixel-Attention",
-        "model"   : "PA-Unet",
+        "name_exp": "SA_Unet_v2_lr_1e3_gamm_05_MSE",
+        "path_exp": "Results/02-Exp-March17-March24/",
+        "name_fig": "SA Unet v2 ",
+        "model"   : "SA-Unet-v2",
         "type_model": "attention"
     },
 }
@@ -122,6 +114,7 @@ data_loader = data_loader.test_generator
 for i, exp in enumerate(name_exp):
     
     path_exp    = name_exp[exp]["path_exp"]
+    name        = name_exp[exp]["name_exp"]
     model       = name_exp[exp]["model"]
     name_fig    = name_exp[exp]["name_fig"]
     type_model  = name_exp[exp]["type_model"]
@@ -130,18 +123,12 @@ for i, exp in enumerate(name_exp):
     # Initialize generator and discriminator
     if(model == "Unet"):
         generator = UNet_Generator(in_channels = args.channels)
-    elif(model == "Residual-PA-Unet"):
-        generator = Residual_PA_UNet_Generator(in_channels= args.channels)
-    elif(model == "PA-Unet"):
-        generator = PA_UNet_Generator(in_channels= args.channels)
-    elif(model == "SA-Unet"):
-        generator = SA_UNet_Generator(in_channels= args.channels)
-    elif(model == "Unet-RPA-UPA"):
-            generator = Unet_RPA_UPA(in_channels= args.channels)
-    elif(model == "Unet-UP"):
-            generator = UNet_Generator_UP_PA(in_channels= args.channels)
+    elif(model == "SA-Unet-v1"):
+        generator = SA_Unet_v1(in_channels= args.channels)
+    elif(model == "SA-Unet-v2"):
+        generator = SA_Unet_v2(in_channels= args.channels)
 
-    generator.load_state_dict(torch.load( os.path.join( path_exp, "saved_models", "G_chkp_400.pth") ))
+    generator.load_state_dict(torch.load( os.path.join( path_exp, name, "saved_models", "G_chkp_400.pth") ))
     print (f"Weights from checkpoint: {os.path.join( path_exp, 'saved_models', 'G_chkp_400.pth')}")
 
     generator.cuda()
@@ -158,7 +145,7 @@ for i, exp in enumerate(name_exp):
         if(type_model == "attention" and (model == "SA-Unet")):
             fake_out, _, _ = generator(real_in)
         elif(type_model == "attention" and (model != "SA-Unet")):
-            fake_out, _ = generator(real_in)
+            fake_out, _, _ = generator(real_in)
         else:
             fake_out    = generator(real_in)
 
