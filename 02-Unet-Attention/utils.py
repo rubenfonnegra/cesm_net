@@ -24,7 +24,7 @@ def plot_test_images(dir_out = None, batch_idx = None, images = [], captions = [
 
     for image, caption in zip (images, captions):
 
-        ax.imshow(image[0,0,...], cmap="gray")
+        ax.imshow(image[0,0,...], cmap="gray", vmin=-1, vmax=1)
         ax.set_title(caption)
         ax.set_axis_off()
         plt.savefig( os.path.join( dir_out, f"{caption}_Image_{batch_idx}.png" ))
@@ -55,7 +55,7 @@ def plot_images_with_metrics(
 
     """ Create image """
     for i, (image, caption) in enumerate(zip(images, captions)):
-        axs[i].imshow(image[0,0,...], cmap = "gray", vmin=0, vmax=1)
+        axs[i].imshow(image[0,0,...], cmap = "gray", vmin=-1, vmax=1)
         axs[i].set_title(caption)
         axs[i].set_axis_off()
 
