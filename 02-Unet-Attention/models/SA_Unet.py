@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from layers import *
+from models.layers import *
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
@@ -27,8 +27,13 @@ Self Attention Unet with Gamma = 0.5 and learned.
 """
 class SA_Unet_v1(nn.Module):
 
-    def __init__(self, in_channels, gamma ):
+    def __init__(self, in_channels, gamma, actOut ):
         super(SA_Unet_v1, self).__init__()
+
+        self.attentionMaps = {}
+        self.gamma  = gamma
+        self.actOut = actOut
+
 
         """ Input Convolutional """
         self.convInput = nn.Conv2d(
@@ -44,7 +49,7 @@ class SA_Unet_v1(nn.Module):
         self.DS1    = DS_block(32,64)
         self.RB2    = R_block(64,64)
         self.DS2    = DS_block(64,128)
-        self.attn1  = Self_Attention_v1(128, gamma=gamma)
+        self.attn1  = Self_Attention_v1(128, gamma= self.gamma)
         self.RB3    = R_block(128,128)
         self.DS3    = DS_block(128,256)
         self.RB4    = R_block(256,256)
@@ -84,23 +89,21 @@ class SA_Unet_v1(nn.Module):
             padding             = 'same'
         )
         
-        self.actOut = nn.Sigmoid()
-    
     def forward(self, img_input):
         
         """ DownSampling Block Forward """
-        outConvInit                 = self.convInput(img_input)         # (B, 32, 256, 256)
-        outRB1                      = self.RB1(outConvInit)             # (B, 32, 256, 256)
-        outDS                       = self.DS1(outRB1)                  # (B, 64, 128, 128)
-        outRB2                      = self.RB2(outDS)                   # (B, 64, 128, 128)
-        outDS                       = self.DS2(outRB2)                  # (B, 128, 64, 64)
-        outRB3                      = self.RB3(outDS)                   # (B, 128, 64, 64)
-        outAttn1, attnMaps1, gamma  = self.attn1(outRB3)                # (B, 128, 64, 64)
-        outDS                       = self.DS3(outAttn1)                # (B, 256, 32, 32)
-        outRB4                      = self.RB4(outDS)                   # (B, 256, 32, 32)
-        outDS                       = self.DS4(outRB4)                  # (B, 512, 16, 16)
-        outRB5                      = self.RB5(outDS)                   # (B, 512, 16, 16)
-        outDS                       = self.DS5(outRB5)                  # (B, 1024, 8, 8)
+        outConvInit                         = self.convInput(img_input)         # (B, 32, 256, 256)
+        outRB1                              = self.RB1(outConvInit)             # (B, 32, 256, 256)
+        outDS                               = self.DS1(outRB1)                  # (B, 64, 128, 128)
+        outRB2                              = self.RB2(outDS)                   # (B, 64, 128, 128)
+        outDS                               = self.DS2(outRB2)                  # (B, 128, 64, 64)
+        outRB3                              = self.RB3(outDS)                   # (B, 128, 64, 64)
+        outAttn1, attnMaps1, self.gamma     = self.attn1(outRB3)                # (B, 128, 64, 64)
+        outDS                               = self.DS3(outAttn1)                # (B, 256, 32, 32)
+        outRB4                              = self.RB4(outDS)                   # (B, 256, 32, 32)
+        outDS                               = self.DS4(outRB4)                  # (B, 512, 16, 16)
+        outRB5                              = self.RB5(outDS)                   # (B, 512, 16, 16)
+        outDS                               = self.DS5(outRB5)                  # (B, 1024, 8, 8)
 
         """ Fusion Block Forward """
         out = self.convFusion(outDS)                                # (B, 1024, 8, 8)                            
@@ -121,16 +124,19 @@ class SA_Unet_v1(nn.Module):
 
         """ Output Convolution """
         out = self.convOut(out)
-        out = self.actOut(out)
 
-        outDictionary = {
+        if(self.actOut != None):
+            out = self.actOut(out)
 
+        self.attentionMaps = {
             "image_input": img_input,
             "attn1": attnMaps1,
             "output_image": out,
         }
 
-        return out, outDictionary, gamma
+        return out
+
+
 
 
 """ 
@@ -138,13 +144,18 @@ class SA_Unet_v1(nn.Module):
 ***** Implementation Self-Attention Unet Generator version #2 ******
 ********************************************************************
 
-Self Attention Unet with Gamma = 0.5 and learned after # epochs.
+Self Attention Unet with Attention layer in decoder.
 """
 class SA_Unet_v2(nn.Module):
 
-    def __init__(self, in_channels ):
+    def __init__(self, in_channels, gamma, actOut ):
         super(SA_Unet_v2, self).__init__()
 
+        self.attentionMaps = {}
+        self.gamma  = gamma
+        self.actOut = actOut
+
+
         """ Input Convolutional """
         self.convInput = nn.Conv2d(
             in_channels     = in_channels,
@@ -159,7 +170,7 @@ class SA_Unet_v2(nn.Module):
         self.DS1    = DS_block(32,64)
         self.RB2    = R_block(64,64)
         self.DS2    = DS_block(64,128)
-        self.attn1  = Self_Attention_v2(128)
+        self.attn1  = Self_Attention_v1(128, gamma= self.gamma)
         self.RB3    = R_block(128,128)
         self.DS3    = DS_block(128,256)
         self.RB4    = R_block(256,256)
@@ -199,138 +210,20 @@ class SA_Unet_v2(nn.Module):
             padding             = 'same'
         )
         
-        self.actOut = nn.Sigmoid()
-    
-    def forward(self, img_input, learned=False):
-        
-        """ DownSampling Block Forward """
-        outConvInit                 = self.convInput(img_input)         # (B, 32, 256, 256)
-        outRB1                      = self.RB1(outConvInit)             # (B, 32, 256, 256)
-        outDS                       = self.DS1(outRB1)                  # (B, 64, 128, 128)
-        outRB2                      = self.RB2(outDS)                   # (B, 64, 128, 128)
-        outDS                       = self.DS2(outRB2)                  # (B, 128, 64, 64)
-        outRB3                      = self.RB3(outDS)                   # (B, 128, 64, 64)
-        outAttn1, attnMaps1, gamma  = self.attn1(outRB3, learned)       # (B, 128, 64, 64)
-        outDS                       = self.DS3(outAttn1)                # (B, 256, 32, 32)
-        outRB4                      = self.RB4(outDS)                   # (B, 256, 32, 32)
-        outDS                       = self.DS4(outRB4)                  # (B, 512, 16, 16)
-        outRB5                      = self.RB5(outDS)                   # (B, 512, 16, 16)
-        outDS                       = self.DS5(outRB5)                  # (B, 1024, 8, 8)
-
-        """ Fusion Block Forward """
-        out = self.convFusion(outDS)                                # (B, 1024, 8, 8)                            
-        out = self.batchnormFusion(out)                             # (B, 1024, 8, 8)
-        out = self.reluFusion(out)                                  # (B, 1024, 8, 8)
-
-        """ Upsampling Block Forward """
-        out             = self.US1( out, outRB5 )                   # (B, 512, 16, 16)
-        out             = self.RB6( out )                           # (B, 512, 16, 16)
-        out             = self.US2( out, outRB4 )                   # (B, 256, 32, 32)
-        out             = self.RB7( out )                           # (B, 256, 32, 32)
-        out             = self.US3(out, outAttn1 )                  # (B, 128, 64, 64)
-        out             = self.RB8(out)                             # (B, 128, 64, 64)
-        out             = self.US4( out, outRB2 )                   # (B, 64, 128, 128)
-        out             = self.RB9(out)                             # (B, 64, 128, 128)
-        out             = self.US5( out, outRB1 )                   # (B, 32, 256, 256)
-        out             = self.RB10(out)                            # (B, 32, 256, 256)
-
-        """ Output Convolution """
-        out = self.convOut(out)
-        out = self.actOut(out)
-
-        outDictionary = {
-
-            "image_input": img_input,
-            "attn1": attnMaps1,
-            "output_image": out,
-        }
-
-        return out, outDictionary, gamma
-
-
-
-""" 
-********************************************************************
-***** Implementation Self-Attention Unet Generator version #1 ******
-********************************************************************
-
-Self Attention Unet with Gamma = 0.5 and learned. The attention layer is in decoder
-"""
-class SA_Unet_v3(nn.Module):
-
-    def __init__(self, in_channels, gamma ):
-        super(SA_Unet_v1, self).__init__()
-
-        """ Input Convolutional """
-        self.convInput = nn.Conv2d(
-            in_channels     = in_channels,
-            out_channels    = 32,
-            kernel_size     = 3,
-            stride          = 1,
-            padding         = 'same'
-        )
-
-        """ DownSampling Block """
-        self.RB1    = R_block(32,32)
-        self.DS1    = DS_block(32,64)
-        self.RB2    = R_block(64,64)
-        self.DS2    = DS_block(64,128)
-        self.RB3    = R_block(128,128)
-        self.DS3    = DS_block(128,256)
-        self.RB4    = R_block(256,256)
-        self.DS4    = DS_block(256,512)
-        self.RB5    = R_block(512,512)
-        self.DS5    = DS_block(512,1024)
-
-        """ Fusion Block """
-        self.convFusion = nn.Conv2d(
-            in_channels     = 1024,
-            out_channels    = 1024,
-            kernel_size     = 3,
-            stride          = 1,
-            padding         = 'same'
-        )
-        self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
-        self.reluFusion = nn.ReLU()
-
-        """ Upsampling Block"""
-        self.US1    = US_block( 1024, 512 )
-        self.RB6    = R_block( 512, 512 )
-        self.US2    = US_block( 512, 256 )
-        self.RB7    = R_block( 256, 256 )
-        self.US3    = US_block( 256, 128 )
-        self.RB8    = R_block( 128, 128 )
-        self.attn1  = Self_Attention_v1(128, gamma=gamma)
-        self.US4    = US_block( 128, 64 )
-        self.RB9    = R_block( 64, 64 )
-        self.US5    = US_block( 64, 32 )
-        self.RB10   = R_block( 32, 32 )
-        
-        """ Output Convolutional """
-        self.convOut = nn.Conv2d(
-            in_channels         = 32,
-            out_channels        = 1,
-            kernel_size         = 3,
-            stride              = 1,
-            padding             = 'same'
-        )
-        
-        self.actOut = nn.Sigmoid()
-    
     def forward(self, img_input):
         
         """ DownSampling Block Forward """
-        outConvInit                 = self.convInput(img_input)         # (B, 32, 256, 256)
-        outRB1                      = self.RB1(outConvInit)             # (B, 32, 256, 256)
-        outDS                       = self.DS1(outRB1)                  # (B, 64, 128, 128)
-        outRB2                      = self.RB2(outDS)                   # (B, 64, 128, 128)
-        outDS                       = self.DS2(outRB2)                  # (B, 128, 64, 64)
-        outRB3                      = self.RB3(outDS)                   # (B, 128, 64, 64)
-        outDS                       = self.DS3(outRB3)                # (B, 256, 32, 32)
-        outRB4                      = self.RB4(outDS)                   # (B, 256, 32, 32)
-        outDS                       = self.DS4(outRB4)                  # (B, 512, 16, 16)
-        outRB5                      = self.RB5(outDS)                   # (B, 512, 16, 16)
-        outDS                       = self.DS5(outRB5)                  # (B, 1024, 8, 8)
+        outConvInit                         = self.convInput(img_input)         # (B, 32, 256, 256)
+        outRB1                              = self.RB1(outConvInit)             # (B, 32, 256, 256)
+        outDS                               = self.DS1(outRB1)                  # (B, 64, 128, 128)
+        outRB2                              = self.RB2(outDS)                   # (B, 64, 128, 128)
+        outDS                               = self.DS2(outRB2)                  # (B, 128, 64, 64)
+        outRB3                              = self.RB3(outDS)                   # (B, 128, 64, 64)
+        outDS                               = self.DS3(outRB3)                  # (B, 256, 32, 32)
+        outRB4                              = self.RB4(outDS)                   # (B, 256, 32, 32)
+        outDS                               = self.DS4(outRB4)                  # (B, 512, 16, 16)
+        outRB5                              = self.RB5(outDS)                   # (B, 512, 16, 16)
+        outDS                               = self.DS5(outRB5)                  # (B, 1024, 8, 8)
 
         """ Fusion Block Forward """
         out = self.convFusion(outDS)                                # (B, 1024, 8, 8)                            
@@ -338,30 +231,32 @@ class SA_Unet_v3(nn.Module):
         out = self.reluFusion(out)                                  # (B, 1024, 8, 8)
 
         """ Upsampling Block Forward """
-        out                         = self.US1( out, outRB5 )                   # (B, 512, 16, 16)
-        out                         = self.RB6( out )                           # (B, 512, 16, 16)
-        out                         = self.US2( out, outRB4 )                   # (B, 256, 32, 32)
-        out                         = self.RB7( out )                           # (B, 256, 32, 32)
-        out                         = self.US3(out, outRB3 )                    # (B, 128, 64, 64)
-        out                         = self.RB8(out)                             # (B, 128, 64, 64)
-        outAttn1, attnMaps1, gamma  = self.attn1(out)                           # (B, 128, 64, 64)
-        out                         = self.US4( outAttn1, outRB2 )              # (B, 64, 128, 128)
-        out                         = self.RB9(out)                             # (B, 64, 128, 128)
-        out                         = self.US5( out, outRB1 )                   # (B, 32, 256, 256)
-        out                         = self.RB10(out)                            # (B, 32, 256, 256)
+        out                                 = self.US1( out, outRB5 )                   # (B, 512, 16, 16)
+        out                                 = self.RB6( out )                           # (B, 512, 16, 16)
+        out                                 = self.US2( out, outRB4 )                   # (B, 256, 32, 32)
+        out                                 = self.RB7( out )                           # (B, 256, 32, 32)
+        out                                 = self.US3(out, outRB3 )                    # (B, 128, 64, 64)
+        outAttn1, attnMaps1, self.gamma     = self.attn1(out)                           # (B, 128, 64, 64)
+        out                                 = self.RB8(outAttn1)                        # (B, 128, 64, 64)
+        out                                 = self.US4( out, outRB2 )                   # (B, 64, 128, 128)
+        out                                 = self.RB9(out)                             # (B, 64, 128, 128)
+        out                                 = self.US5( out, outRB1 )                   # (B, 32, 256, 256)
+        out                                 = self.RB10(out)                            # (B, 32, 256, 256)
 
         """ Output Convolution """
         out = self.convOut(out)
-        out = self.actOut(out)
 
-        outDictionary = {
+        if(self.actOut != None):
+            out = self.actOut(out)
 
+        self.attentionMaps = {
             "image_input": img_input,
             "attn1": attnMaps1,
             "output_image": out,
         }
 
-        return out, outDictionary, gamma
+        return out
+
     
 """
 ---------- Implementation of Self-Attention Layer -----------
