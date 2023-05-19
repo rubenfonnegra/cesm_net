@@ -39,15 +39,11 @@ def crop_image_only_outside(im_input_, im_output_, tol=0):
 parser = argparse.ArgumentParser(description= "Training GANs using CA loss")
     
 # Configs  
-parser.add_argument("--exp_name", type=str, default="pruebaWSES", help="name of the experiment")
 parser.add_argument("--data_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Data/cesm_images_complete_256_val/", help="Data dir path")
 parser.add_argument("--result_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19-2/", help = "Results path. Default = %(default)s")
 parser.add_argument("--img_complete", help="Image complete or patches exp?", default=True, action="store_true")
-parser.add_argument("--tag_exp", type=str, default="Exp", help="Tag for wandb")
 
 # Model configs
-parser.add_argument("--model", help="Model to use.", default = "riedNet", choices=["riedNet", "RPA-Unet", "SA-Unet-v1", "SA-Unet-v2"])
-parser.add_argument("--act_out", type=str, default="Linear", help="Activation out model", choices=["Linear", "ReLU", "Sigmoid"])
 parser.add_argument("--lambda_pixel", type=float, default=100., help="The weight of pixel loss, default = 100")
 parser.add_argument("--lambda_edge", type=float, default=10., help="The weight of pixel loss, default = 100")
 parser.add_argument("--alpha_breast", type=float, default=0.8, help="The weight of breast in Weigthed loss, default = 0.8")
@@ -85,32 +81,25 @@ channels        = args.channels
 name_exp        = {
 
     "Exp1": {
-        "name_exp": "RiedNet_MAE_lr2e3_New_Data_256",
-        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19-2/",
-        "name_fig": "Ried-Net",
-        "model"   : "riedNet",
-    },
-
-    "Exp2": {
-        "name_exp": "RPA_Unet_MAE_lr1e4_New_Data_256",
-        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19-2/",
-        "name_fig": "RPA Unet",
+        "name_exp": "RPA_Unet_New_Data_256",
+        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/06-Exp-May19-May26/MAE_Gain/",
+        "name_fig": "RPA_Unet",
         "model"   : "RPA-Unet",
     },
 
-    "Exp3":{
-        "name_exp": "SA_Unet_v1_MAE_lr1e4_New_Data_256_gamma_05",
-        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19-2/",
+    "Exp2": {
+        "name_exp": "SA_Unet_v1_New_Data_256",
+        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/06-Exp-May19-May26/MAE_Gain/",
         "name_fig": "SA Unet v1, gamma=0.5",
         "model"   : "SA-Unet-v1",
     },
 
-    "Exp4":{
-        "name_exp": "SA_Unet_v2_MAE_lr1e4_New_Data_256",
-        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19-2/",
-        "name_fig": "SA_Unet_v2",
+    "Exp3":{
+        "name_exp": "SA_Unet_v2_New_Data_256",
+        "path_exp": "/home/mirplab/Documents/kevin/01-cesm_net/Results/06-Exp-May19-May26/MAE_Gain/",
+        "name_fig": "SA Unet v2, gamma=0.5",
         "model"   : "SA-Unet-v2",
-    },
+    }
 }
 
 imgs_exps, img_real, names_exps, img_in = [], [], [], []
