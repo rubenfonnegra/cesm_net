@@ -9,7 +9,6 @@ import cv2
 
 def convert_squared(im, name):
 
-
     im_width  = im.shape[1]
     im_height = im.shape[0]
     dim_faltante = im_height - im_width
@@ -58,13 +57,13 @@ def save_images(dir_save = None, list_data = [], dir_data = None, subset = None 
         img1 = scaler(
             im = img1,
             range_in= [np.amin(img1), np.amax(img1)],
-            range_out=[0,1]
+            range_out=[-1,1]
         )
 
         img2 = scaler(
             im = img2,
             range_in= [np.amin(img2), np.amax(img2)],
-            range_out=[0,1]
+            range_out=[-1,1]
         )
 
         img1 = Image.fromarray(img1)
@@ -92,10 +91,8 @@ def save_images(dir_save = None, list_data = [], dir_data = None, subset = None 
 path_csv_bening    = "birads_1_2_3_4.csv"
 path_csv_maling    = "birads_5_6.csv"
 dir_data    = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/"
-dir_save    = "/media/mirplab/TB2/Experiments-Mammography/01_Data/cesm_images_complete_512_val"
-train_ratio = 0.8
-validation_ratio = 0.10
-test_ratio = 0.10
+dir_save    = "/media/mirplab/TB2/Experiments-Mammography/01_Data/cesm_images_complete_256_11"
+
 
 os.makedirs( os.path.join( dir_save, "LE"), exist_ok=True )
 os.makedirs( os.path.join( dir_save, "RC"), exist_ok=True )
@@ -107,16 +104,10 @@ data_bening        = data_bening["Image_Name"].to_list()
 data_malign        = pd.read_csv(path_csv_maling, sep=",")
 data_malign        = data_malign["Image_Name"].to_list()
 
-# data_CC     = [image for image in data if (image.find("CC")) != -1]
+data_malign_train, data_malign_test         = train_test_split( np.array(data_malign), train_size= 68, random_state=42 )
+data_malign_test, data_malign_val           = train_test_split( data_malign_test, train_size= 15, random_state=42 )
 
-# data_CC_train, data_CC_test                 = train_test_split( np.array(data_CC), train_size= 350, random_state=42 )
-# data_CC_test, data_CC_val                   = train_test_split( data_CC_test, test_size=20, random_state=42)
-# data_CC_train, data_CC_test, data_CC_val    = data_CC_train.tolist(), data_CC_test.tolist(), data_CC_val.tolist()
-
-data_malign_train, data_malign_test         = train_test_split( np.array(data_malign), train_size= 60, random_state=42 )
-data_malign_test, data_malign_val           = train_test_split( data_malign_test, train_size= 23, random_state=42 )
-
-data_bening_train, data_bening_test         = train_test_split( np.array(data_bening), train_size= 290, random_state=42 )
+data_bening_train, data_bening_test         = train_test_split( np.array(data_bening), train_size= 272, random_state=42 )
 data_bening_test, data_bening_val           = train_test_split( data_bening_test, test_size= 15, random_state=42 )
 
 train   = data_bening_train.tolist() + data_malign_train.tolist()

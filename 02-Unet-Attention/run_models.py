@@ -22,7 +22,7 @@ def main():
     
     # Model configs
     parser.add_argument("--model", help="Model to use.", default = "riedNet", choices=["riedNet", "RPA-Unet", "SA-Unet-v1", "SA-Unet-v2"])
-    parser.add_argument("--act_out", type=str, default="Linear", help="Activation out model", choices=["Linear", "ReLU", "Sigmoid"])
+    parser.add_argument("--act_out", type=str, default="Linear", help="Activation out model", choices=["Linear", "ReLU", "Sigmoid", "LeackyReLU"])
     parser.add_argument("--lambda_pixel", type=float, default=100., help="The weight of pixel loss, default = 100")
     parser.add_argument("--lambda_edge", type=float, default=10., help="The weight of pixel loss, default = 100")
     parser.add_argument("--alpha_breast", type=float, default=0.8, help="The weight of breast in Weigthed loss, default = 0.8")

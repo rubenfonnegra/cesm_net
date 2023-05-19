@@ -116,7 +116,7 @@ class Residual_PA_block(nn.Module):
                 momentum        =  0.8 
             ),
             
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
             
             nn.Conv2d(
                 in_channels     = out_channels,
@@ -173,7 +173,7 @@ class R_block(nn.Module):
                 momentum        =  0.8 
             ),
 
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
 
             nn.Conv2d(
                 in_channels     = in_channels,
@@ -229,7 +229,7 @@ class US_block(nn.Module):
                 momentum        =  0.8 
             )
         
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU(0.2)
 
         self.convOut = nn.Conv2d(
             in_channels         = in_channels,
@@ -280,7 +280,7 @@ class US_block_PA(nn.Module):
 
         self.pixel_attn1 = PixelAttention(in_channels)
         
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU(0.2)
 
         self.convOut = nn.Conv2d(
             in_channels         = in_channels,
@@ -330,7 +330,7 @@ class DS_block(nn.Module):
                 momentum        =  0.8 
             ),
 
-            nn.ReLU()
+            nn.LeakyReLU(0.2)
         )
     
     def forward(self, input_layer ):
@@ -363,7 +363,7 @@ class US_block_Skip_Attn(nn.Module):
                 momentum        =  0.8 
             )
         
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU(0.2)
 
         self.convOut = nn.Conv2d(
             in_channels         = out_channels,

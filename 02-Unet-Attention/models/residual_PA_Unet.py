@@ -61,7 +61,7 @@ class RPA_Unet_Generator(nn.Module):
             padding         = 'same'
         )
         self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
-        self.reluFusion = nn.ReLU()
+        self.actFusion = nn.LeakyReLU(0.2)
 
         """ Upsampling Block"""
         self.US1 = US_block(1024, 512)
@@ -102,7 +102,7 @@ class RPA_Unet_Generator(nn.Module):
         """ Fusion Block Forward """
         out = self.convFusion(outDS)                        # (B, 1024, 8, 8)
         out = self.batchnormFusion(out)                     # (B, 1024, 8, 8)
-        out = self.reluFusion(out)                          # (B, 1024, 8, 8)
+        out = self.actFusion(out)                          # (B, 1024, 8, 8)
 
         """ Upsampling Block Forward """
         out             = self.US1( out, outRPA4 )              # (B, 512, 16, 16)

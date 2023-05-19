@@ -12,6 +12,8 @@ def get_model(args):
         actOut = nn.Sigmoid()
     elif(args.act_out == "Linear"):
         actOut = None
+    elif(args.act_out == "LeackyReLU"):
+        nn.LeakyReLU(0.2)
     
     if(args.model == "riedNet"):
         return riedNet( config = args, actOut = actOut)

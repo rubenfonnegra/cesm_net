@@ -66,7 +66,7 @@ class SA_Unet_v1(nn.Module):
             padding         = 'same'
         )
         self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
-        self.reluFusion = nn.ReLU()
+        self.reluFusion = nn.LeakyReLU(0.2)
 
         """ Upsampling Block"""
         self.US1    = US_block( 1024, 512 )
@@ -187,7 +187,7 @@ class SA_Unet_v2(nn.Module):
             padding         = 'same'
         )
         self.batchnormFusion = nn.BatchNorm2d(1024, momentum=0.8)
-        self.reluFusion = nn.ReLU()
+        self.reluFusion = nn.LeakyReLU(0.2)
 
         """ Upsampling Block"""
         self.US1    = US_block( 1024, 512 )
