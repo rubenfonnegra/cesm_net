@@ -15,14 +15,14 @@ def main():
     
     # Configs  
     parser.add_argument("--exp_name", type=str, default="pruebaWSES", help="name of the experiment")
-    parser.add_argument("--data_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Data/cesm_images_complete_256_val/", help="Data dir path")
-    parser.add_argument("--result_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Results/05-Exp-May15-May19/", help = "Results path. Default = %(default)s")
+    parser.add_argument("--data_dir", type = str, default = "/media/labmirp/Datos/workspaces/cesm_net/Data/cesm_images_complete_256_11/", help="Data dir path")
+    parser.add_argument("--result_dir", type = str, default = "/media/labmirp/Datos/workspaces/cesm_net/Results/06-Exp-May19-May26/WeightedSum_EdgeSobel_Loss", help = "Results path. Default = %(default)s")
     parser.add_argument("--img_complete", help="Image complete or patches exp?", default=True, action="store_true")
     parser.add_argument("--tag_exp", type=str, default="Exp", help="Tag for wandb")
     
     # Model configs
-    parser.add_argument("--model", help="Model to use.", default = "riedNet", choices=["riedNet", "RPA-Unet", "SA-Unet-v1", "SA-Unet-v2"])
-    parser.add_argument("--act_out", type=str, default="Linear", help="Activation out model", choices=["Linear", "ReLU", "Sigmoid", "LeackyReLU"])
+    parser.add_argument("--model", help="Model to use.", default = "RPA-Unet", choices=["riedNet", "RPA-Unet", "SA-Unet-v1", "SA-Unet-v2"])
+    parser.add_argument("--act_out", type=str, default="LeackyReLU", help="Activation out model", choices=["Linear", "ReLU", "Sigmoid", "LeackyReLU"])
     parser.add_argument("--lambda_pixel", type=float, default=100., help="The weight of pixel loss, default = 100")
     parser.add_argument("--lambda_edge", type=float, default=10., help="The weight of pixel loss, default = 100")
     parser.add_argument("--alpha_breast", type=float, default=0.8, help="The weight of breast in Weigthed loss, default = 0.8")
@@ -45,7 +45,7 @@ def main():
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--weigth_init", type=str, default="normal", choices = ['normal', 'glorot'], help="weights initializer")
     parser.add_argument("--checkpoint_interval", type=int, default=50, help="interval between model checkpoints. Default = %(default)s (no save)")
-    parser.add_argument("--loss", type=str, default="MAE", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
+    parser.add_argument("--loss", type=str, default="WeightSumEdgeSobel", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
     
 
     # Initial configs

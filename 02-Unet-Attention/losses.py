@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+from skimage.filters import sobel
+
 
 
 class SobelLoss(nn.Module):
@@ -9,36 +12,57 @@ class SobelLoss(nn.Module):
         super(SobelLoss, self).__init__()
 
         self.loss       = nn.L1Loss()
-        self.grad_layer = GradLayer()
 
     def forward(self, fake, real):
 
-        fake_sobel = self.grad_layer(fake)
-        real_sobel = self.grad_layer(real)
+        fake_sobel = self.sobel_filter(fake)
+        real_sobel = self.sobel_filter(real)
         return self.loss(fake_sobel, real_sobel)
 
-class GradLayer(nn.Module):
+    def sobel_filter(self, imgs):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        imgs = imgs.cpu().detach().numpy()
+        
+        if (len(imgs.shape) == 3):
+            edges = sobel(imgs[0,...])
+            edges = edges[np.newaxis, ...]
+            
+        elif(len(imgs.shape) == 4):
+            
+            edges = []
+            for batch in range(imgs.shape[0]):
+                sobel_ = sobel(imgs[batch, 0, ...])
+                edges.append( sobel_[np.newaxis, ...] )
+            
+            edges = np.array(edges)
+    
+        edges = torch.from_numpy(edges).to(device)
+        return edges
+        
+            
 
-    def __init__(self):
-        super(GradLayer, self).__init__()
-        kernel_v = [[0, -1, 0],
-                    [0, 0, 0],
-                    [0, 1, 0]]
-        kernel_h = [[0, 0, 0],
-                    [-1, 0, 1],
-                    [0, 0, 0]]
-        kernel_h = torch.FloatTensor(kernel_h).unsqueeze(0).unsqueeze(0)
-        kernel_v = torch.FloatTensor(kernel_v).unsqueeze(0).unsqueeze(0)
-        self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False)
-        self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False)
+# class GradLayer(nn.Module):
 
-    def forward(self, x):
+#     def __init__(self):
+#         super(GradLayer, self).__init__()
+#         kernel_v = [[0, -1, 0],
+#                     [0, 0, 0],
+#                     [0, 1, 0]]
+#         kernel_h = [[0, 0, 0],
+#                     [-1, 0, 1],
+#                     [0, 0, 0]]
+#         kernel_h = torch.FloatTensor(kernel_h).unsqueeze(0).unsqueeze(0)
+#         kernel_v = torch.FloatTensor(kernel_v).unsqueeze(0).unsqueeze(0)
+#         self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False)
+#         self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False)
 
-        x_v = F.conv2d(x, self.weight_v, padding=1)
-        x_h = F.conv2d(x, self.weight_h, padding=1)
-        x = torch.sqrt(torch.pow(x_v, 2) + torch.pow(x_h, 2) + 1e-6)
+#     def forward(self, x):
 
-        return x
+#         x_v = F.conv2d(x, self.weight_v, padding=1)
+#         x_h = F.conv2d(x, self.weight_h, padding=1)
+#         x = torch.sqrt(torch.pow(x_v, 2) + torch.pow(x_h, 2) + 1e-6)
+
+#         return x
 
 
 
@@ -68,8 +92,8 @@ class WeightedSumLoss(nn.Module):
         """ Calculate losses """
         self.loss_pixel_breast      = self.loss(fake_out_breast, real_out_breast)
         self.loss_pixel_bg          = self.loss(fake_out_bg, real_out_bg)
-        self.weightedSumLoss        = (self.alpha_breast * self.loss_pixel_breast) + (self.alpha_background * self.loss_pixel_bg)
-        self.weightedSumLoss        = self.gamma_loss * self.weightedSumLoss
+        self.weightedSum            = (self.alpha_breast * self.loss_pixel_breast) + (self.alpha_background * self.loss_pixel_bg)
+        self.weightedSumLoss        = self.gamma_loss * self.weightedSum
         
         return self.weightedSumLoss 
 

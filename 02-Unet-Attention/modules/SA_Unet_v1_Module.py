@@ -63,11 +63,14 @@ class SA_Unet_v1_Module(pl.LightningModule):
             self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
             self.log(f"Breast_Loss", self.loss.loss_pixel_breast, on_epoch=True, prog_bar=True, logger=True)
             self.log(f"Background_Loss", self.loss.loss_pixel_bg, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Weighted_Sum_Loss", self.loss.weightedSum, on_epoch=True, prog_bar=True, logger=True)
             
         elif(self.config.loss == "WeightSumEdgeSobel"):
             self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
             self.log(f"Pixel_Loss", self.loss.weightedSummLoss, on_epoch=True, prog_bar=True, logger=True)
             self.log(f"Edge_Loss", self.loss.edgeSobelLoss, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"WS_Breast_Loss", self.loss.loss_pixel.loss_pixel_breast, on_epoch=True, logger=True)
+            self.log(f"WS_Background_Loss", self.loss.loss_pixel.loss_pixel_bg, on_epoch=True, logger=True)
 
         elif(self.config.loss == "MAEEdgeSobel"):
             self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
