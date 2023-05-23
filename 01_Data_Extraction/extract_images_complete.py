@@ -51,8 +51,8 @@ def save_images(dir_save = None, list_data = [], dir_data = None, subset = None 
         img1 = Image.fromarray(img1)
         img2 = Image.fromarray(img2)
 
-        img1 = np.array(img1.resize((512,512), Image.BICUBIC))
-        img2 = np.array(img2.resize((512,512), Image.BICUBIC))
+        img1 = np.array(img1.resize((256,256), Image.BICUBIC))
+        img2 = np.array(img2.resize((256,256), Image.BICUBIC))
         
         img1 = scaler(
             im = img1,

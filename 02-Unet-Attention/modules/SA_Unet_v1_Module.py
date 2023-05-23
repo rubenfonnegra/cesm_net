@@ -28,7 +28,7 @@ class SA_Unet_v1_Module(pl.LightningModule):
     def __init__(self, config, actOut):
         super().__init__()
 
-        self.model  = SA_Unet_v1( in_channels = config.channels, actOut = actOut)
+        self.model  = SA_Unet_v1( in_channels = config.channels, gamma = config.gamma, actOut = actOut)
         self.config = config
         self.save_hyperparameters()
 

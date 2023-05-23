@@ -25,10 +25,10 @@ def weights_init_glorot (m):
             m.bias.data.fill_(0.01)
 
 class SA_Unet_v2_Module(pl.LightningModule):
-    def __init__(self, config, gamma, actOut):
+    def __init__(self, config, actOut):
         super().__init__()
 
-        self.model  = SA_Unet_v2( in_channels = config.channels, actOut = actOut)
+        self.model  = SA_Unet_v2( in_channels = config.channels, gamma = config.gamma, actOut = actOut)
         self.config = config
         self.save_hyperparameters()
 
