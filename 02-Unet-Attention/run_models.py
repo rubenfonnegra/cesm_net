@@ -45,7 +45,7 @@ def main():
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--weigth_init", type=str, default="normal", choices = ['normal', 'glorot'], help="weights initializer")
     parser.add_argument("--checkpoint_interval", type=int, default=50, help="interval between model checkpoints. Default = %(default)s (no save)")
-    parser.add_argument("--loss", type=str, default="WeightSumEdgeSobel", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
+    parser.add_argument("--loss", type=str, default="WeightSum", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
     
 
     # Initial configs

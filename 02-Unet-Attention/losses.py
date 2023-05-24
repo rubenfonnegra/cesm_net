@@ -80,8 +80,8 @@ class WeightedSumLoss(nn.Module):
     def forward(self, fake_out, real_out):
 
         """ Create Mask of breast and background """
-        mask_bg     = (real_out <=  0.0) * 1.
-        mask_breast = (real_out >   0.0) * 1.
+        mask_bg     = (real_out <=  -0.9) * 1.
+        mask_breast = (real_out >   -0.9) * 1.
 
         """ Apply mask to real_out and fake_out images """
         real_out_bg         = real_out * mask_bg
