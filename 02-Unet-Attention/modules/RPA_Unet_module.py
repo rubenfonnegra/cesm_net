@@ -32,6 +32,19 @@ class RPA_Unet_Module(pl.LightningModule):
         self.config = config
         self.save_hyperparameters()
 
+        if(config.version_mask == "0"):
+            self.mask           = False
+            self.valueMask      = 0.05
+            self.versionMask    = "0"
+        elif(config.version_mask == "1"):
+            self.mask           = True
+            self.valueMask      = 0.05
+            self.versionMask    = "1"
+        elif(config.version_mask == "2"):
+            self.mask           = True
+            self.valueMask      = 0.05
+            self.versionMask    = "2"
+
         """ Get Weights Losses """
         self.lambda_pixel       = config.lambda_pixel
         self.lambda_edge        = config.lambda_edge
@@ -58,24 +71,35 @@ class RPA_Unet_Module(pl.LightningModule):
         """ Logg the losses """
         if(self.config.loss == "MAE"):
             self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Pixel_Loss", self.loss.pixel_loss, on_epoch=True, prog_bar=True, logger=True)
 
         elif(self.config.loss == "WeightSum"):
-            self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Breast_Loss", self.loss.loss_pixel_breast, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Background_Loss", self.loss.loss_pixel_bg, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Weighted_Sum_Loss", self.loss.weightedSum, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Total_Loss",                 loss_G, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Breast_Loss",                self.loss.loss_pixel_breast, on_epoch=True, logger=True)
+            self.log(f"Background_Loss",            self.loss.loss_pixel_bg, on_epoch=True, logger=True)
+            self.log(f"Weighted_Sum_Loss",          self.loss.weightedSum, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Weighted_Sum_Loss_Total",    self.loss.weightedSumLossTotal, on_epoch=True, logger=True)
+
+            self.log(f"Pixel_Loss", self.loss.pixel_loss, on_epoch=True, logger=True)
+            self.log(f"Breast_Weighted_Loss", self.loss.breast_weighted, on_epoch=True, logger=True)
+            self.log(f"Background_Weighted_Loss", self.loss.bg_weighted, on_epoch=True, logger=True)
             
         elif(self.config.loss == "WeightSumEdgeSobel"):
-            self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Pixel_Loss", self.loss.weightedSummLoss, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Edge_Loss", self.loss.edgeSobelLoss, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Breast_Loss", self.loss.loss_pixel.loss_pixel_breast, on_epoch=True, logger=True)
-            self.log(f"Background_Loss", self.loss.loss_pixel.loss_pixel_bg, on_epoch=True, logger=True)
+            self.log(f"Total_Loss",                 loss_G, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Weighted_Sum_Loss",          self.loss.weightedSum, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Weighted_Sum_Loss_Total",    self.loss.weightedSummLossTotal, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Edge_Loss_Total",            self.loss.edgeSobelLossTotal, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Breast_Loss",                self.loss.loss_weighted_sum.loss_pixel_breast, on_epoch=True, logger=True)
+            self.log(f"Background_Loss",            self.loss.loss_weighted_sum.loss_pixel_bg, on_epoch=True, logger=True)
+
+            self.log(f"Pixel_Loss",                 self.loss.loss_weighted_sum.pixel_loss, on_epoch=True, logger=True)
+            self.log(f"Breast_Weighted_Loss",       self.loss.loss_weighted_sum.breast_weighted, on_epoch=True, logger=True)
+            self.log(f"Background_Weighted_Loss",   self.loss.loss_weighted_sum.bg_weighted, on_epoch=True, logger=True)
 
         elif(self.config.loss == "MAEEdgeSobel"):
-            self.log(f"Total_Loss", loss_G, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"MAE_Loss", self.loss.maeLoss, on_epoch=True, prog_bar=True, logger=True)
-            self.log(f"Edge_Loss", self.loss.edgeSobelLoss, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Total_Loss",                 loss_G, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"MAE_Loss",                   self.loss.maeLoss, on_epoch=True, prog_bar=True, logger=True)
+            self.log(f"Edge_Loss",                  self.loss.edgeSobelLossTotal, on_epoch=True, prog_bar=True, logger=True)
                     
         return loss_G
     
@@ -140,10 +164,13 @@ class RPA_Unet_Module(pl.LightningModule):
             return WeightedSumLoss(alpha_breast = self.alpha_breast, alpha_background = self.alpha_background, gamma_loss = self.gamma_loss )
         elif(loss == "WeightSumEdgeSobel"):
             return WeightedSumEdgeSobelLoss(
-                alpha_breast = self.alpha_breast,
-                alpha_background = self.alpha_background,
-                lambda_pixel= self.lambda_pixel,
-                lambda_edge = self.lambda_edge
+                alpha_breast        = self.alpha_breast,
+                alpha_background    = self.alpha_background,
+                lambda_pixel        = self.lambda_pixel,
+                lambda_edge         = self.lambda_edge,
+                mask                = self.mask,
+                valueMask           = self.valueMask,
+                versionMask         = self.versionMask
             )
         elif(loss == "MAEEdgeSobel"):
             return MAEEdgeSobelLoss(lambda_pixel = self.lambda_pixel, lambda_edge = self.lambda_edge)

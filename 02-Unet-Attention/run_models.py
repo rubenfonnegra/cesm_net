@@ -15,8 +15,8 @@ def main():
     
     # Configs  
     parser.add_argument("--exp_name", type=str, default="pruebaWSES", help="name of the experiment")
-    parser.add_argument("--data_dir", type = str, default = "/media/labmirp/Datos/workspaces/cesm_net/Data/cesm_images_complete_256_11/", help="Data dir path")
-    parser.add_argument("--result_dir", type = str, default = "/media/labmirp/Datos/workspaces/cesm_net/Results/06-Exp-May19-May26/WeightedSum_EdgeSobel_Loss", help = "Results path. Default = %(default)s")
+    parser.add_argument("--data_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Data/cesm_images_complete_256_11/", help="Data dir path")
+    parser.add_argument("--result_dir", type = str, default = "/home/mirplab/Documents/kevin/01-cesm_net/Results/08-Exp-May26-Jun02/", help = "Results path. Default = %(default)s")
     parser.add_argument("--img_complete", help="Image complete or patches exp?", default=True, action="store_true")
     parser.add_argument("--tag_exp", type=str, default="Exp", help="Tag for wandb")
     
@@ -45,7 +45,8 @@ def main():
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--weigth_init", type=str, default="normal", choices = ['normal', 'glorot'], help="weights initializer")
     parser.add_argument("--checkpoint_interval", type=int, default=50, help="interval between model checkpoints. Default = %(default)s (no save)")
-    parser.add_argument("--loss", type=str, default="WeightSum", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
+    parser.add_argument("--loss", type=str, default="WeightSumEdgeSobel", help="Loss of model", choices=["MAE", "WeightSum", "WeightSumEdgeSobel", "MAEEdgeSobel"])
+    parser.add_argument("--version_mask", type=str, default="1", help="Loss of model", choices=["0", "1", "2"])
     
 
     # Initial configs

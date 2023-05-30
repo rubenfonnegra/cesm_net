@@ -14,9 +14,9 @@ def convert_squared(im, name):
     dim_faltante = im_height - im_width
 
     if ((name.find("L")) != -1):
-        im = np.concatenate( ( im, np.zeros((im_height, dim_faltante))), axis= 1 )
+        im = np.concatenate( ( im, np.ones((im_height, dim_faltante))*-1.), axis= 1 )
     else:
-        im = np.concatenate( ( np.zeros((im_height, dim_faltante)), im), axis=1 )
+        im = np.concatenate( ( np.ones((im_height, dim_faltante))*-1, im), axis=1 )
     return im
 
 def fig2img(fig):
@@ -55,22 +55,32 @@ def save_images(dir_save = None, list_data = [], dir_data = None, subset = None 
         )
         
         """ Create Mask of breast and background """
-        mask_bg     = (img <=  -0.9) * 1.
-        mask_breast = (img >   -0.9) * 1.
+        mask_bg     = (img <=  -0.90) * 1.
+        mask_breast = (img >   -0.90) * 1.
+
+        kernel      = np.ones((7,7))
+        mask_bg     = cv2.morphologyEx(mask_bg, cv2.MORPH_OPEN, kernel)
+        mask_breast = cv2.morphologyEx(mask_breast, cv2.MORPH_CLOSE, kernel)
 
         fig, axes = plt.subplots(1,3)
 
         axes[0].imshow(img, cmap="gray", vmin=-1., vmax=1.)
         axes[0].set_title("Recombined Image")
-        axes[0].set_axis_off()
+        #axes[0].set_axis_off()
+        axes[0].set_yticklabels([])
+        axes[0].set_xticklabels([])
 
         axes[1].imshow(mask_breast, cmap="gray")
         axes[1].set_title("Mask Breast")
-        axes[1].set_axis_off()
+        #axes[1].set_axis_off()
+        axes[1].set_yticklabels([])
+        axes[1].set_xticklabels([])
 
         axes[2].imshow(mask_bg, cmap="gray")
         axes[2].set_title("Mask Background")
-        axes[2].set_axis_off()
+        #axes[2].set_axis_off()
+        axes[2].set_yticklabels([])
+        axes[2].set_xticklabels([])
 
         plt.savefig(fname = os.path.join( dir_save, f"{im}.png"), dpi=250, format="png")
         plt.close("all")
@@ -80,8 +90,8 @@ def save_images(dir_save = None, list_data = [], dir_data = None, subset = None 
 
 path_csv_bening    = "birads_1_2_3_4.csv"
 path_csv_maling    = "birads_5_6.csv"
-dir_data    = "/media/labmirp/Datos/workspaces/cesm_net/Data/images-1/"
-dir_save    = "/media/labmirp/Datos/workspaces/cesm_net/Data/test_mask_09"
+dir_data    = "/media/mirplab/TB2/Experiments-Mammography/02-CDD-CESM/images-1/"
+dir_save    = "/media/mirplab/TB2/Experiments-Mammography/01_Data/TEST/test_mask_09"
 
 
 os.makedirs( os.path.join( dir_save ), exist_ok=True )

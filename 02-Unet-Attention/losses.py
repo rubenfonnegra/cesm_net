@@ -8,17 +8,45 @@ from skimage.filters import sobel
 
 class SobelLoss(nn.Module):
 
-    def __init__(self):
+    def __init__(self, mask=False, valueMask = 0.0, versionMask = "1"):
         super(SobelLoss, self).__init__()
 
-        self.loss       = nn.L1Loss()
+        self.mask           = mask
+        self.valueMask      = valueMask
+        self.versionMask    = versionMask
+
+        if(self.mask == True):
+            self.loss       = nn.L1Loss(reduction="sum")
+        else:
+            self.loss       = nn.L1Loss()
 
     def forward(self, fake, real):
 
         fake_sobel = self.sobel_filter(fake)
         real_sobel = self.sobel_filter(real)
-        return self.loss(fake_sobel, real_sobel)
 
+        if(self.mask == True):
+            return self.calcularLossTotal(fake_sobel, real_sobel)
+        else:
+            return self.loss(fake_sobel, real_sobel)
+        
+
+    def calcularLossTotal(self, im_fake, im_real):
+
+        if( self.versionMask == "1"):
+            mask = (im_real > self.valueMask) * 1
+        elif (self.versionMask == "2"):
+            mask = ((im_real > self.valueMask)  or (im_fake > self.valueMask)) * 1. 
+
+        im_real = im_real * mask
+        im_fake = im_fake * mask
+
+        loss = self.loss(im_fake, im_real)
+        loss = loss / torch.count_nonzero(mask == 1.)
+        loss = loss / im_real.shape[0]
+
+        return loss
+    
     def sobel_filter(self, imgs):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         imgs = imgs.cpu().detach().numpy()
@@ -38,32 +66,6 @@ class SobelLoss(nn.Module):
     
         edges = torch.from_numpy(edges).to(device)
         return edges
-        
-            
-
-# class GradLayer(nn.Module):
-
-#     def __init__(self):
-#         super(GradLayer, self).__init__()
-#         kernel_v = [[0, -1, 0],
-#                     [0, 0, 0],
-#                     [0, 1, 0]]
-#         kernel_h = [[0, 0, 0],
-#                     [-1, 0, 1],
-#                     [0, 0, 0]]
-#         kernel_h = torch.FloatTensor(kernel_h).unsqueeze(0).unsqueeze(0)
-#         kernel_v = torch.FloatTensor(kernel_v).unsqueeze(0).unsqueeze(0)
-#         self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False)
-#         self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False)
-
-#     def forward(self, x):
-
-#         x_v = F.conv2d(x, self.weight_v, padding=1)
-#         x_h = F.conv2d(x, self.weight_h, padding=1)
-#         x = torch.sqrt(torch.pow(x_v, 2) + torch.pow(x_h, 2) + 1e-6)
-
-#         return x
-
 
 
 
@@ -72,7 +74,7 @@ class WeightedSumLoss(nn.Module):
     def __init__(self, alpha_breast = 0.8, alpha_background = 0.2, gamma_loss = 1. ):
         super(WeightedSumLoss, self).__init__()
 
-        self.loss               = nn.L1Loss()
+        self.loss               = nn.L1Loss(reduction="sum")
         self.alpha_breast       = alpha_breast
         self.alpha_background   = alpha_background
         self.gamma_loss         = gamma_loss
@@ -91,34 +93,53 @@ class WeightedSumLoss(nn.Module):
 
         """ Calculate losses """
         self.loss_pixel_breast      = self.loss(fake_out_breast, real_out_breast)
+        self.loss_pixel_breast      = self.calcularLossTotal(self.loss_pixel_breast, mask_breast)
+
         self.loss_pixel_bg          = self.loss(fake_out_bg, real_out_bg)
-        self.weightedSum            = (self.alpha_breast * self.loss_pixel_breast) + (self.alpha_background * self.loss_pixel_bg)
-        self.weightedSumLoss        = self.gamma_loss * self.weightedSum
+        self.loss_pixel_bg          = self.calcularLossTotal(self.loss_pixel_bg, mask_bg)
         
-        return self.weightedSumLoss 
+        self.weightedSum            = (self.alpha_breast * self.loss_pixel_breast) + (self.alpha_background * self.loss_pixel_bg)
+        
+        self.pixel_loss             = self.loss_pixel_breast + self.loss_pixel_bg
+        self.breast_weighted        = (self.alpha_breast * self.loss_pixel_breast)
+        self.bg_weighted            = (self.alpha_background * self.loss_pixel_bg)
 
+        self.weightedSumLossTotal   = self.gamma_loss * self.weightedSum
+        
+        return self.weightedSumLossTotal
 
+    def calcularLossTotal(self, loss, mask):
 
-
+        loss = loss / torch.count_nonzero(mask == 1.)
+        loss = loss / mask.shape[0]
+        return loss
 
 
 class WeightedSumEdgeSobelLoss(nn.Module):
 
-    def __init__(self, alpha_breast = 0.8, alpha_background = 0.2, lambda_pixel = 100, lambda_edge = 100):
+    def __init__(
+        self, 
+        alpha_breast = 0.8, alpha_background = 0.2, 
+        lambda_pixel = 100, lambda_edge = 100, 
+        mask = False, valueMask = 0.05, versionMask = "0"
+        ):
         super(WeightedSumEdgeSobelLoss, self).__init__()
 
-        self.loss_pixel             = WeightedSumLoss( alpha_breast = alpha_breast, alpha_background = alpha_background)
-        self.loss_edge              = SobelLoss()
+        self.loss_weighted_sum      = WeightedSumLoss( alpha_breast = alpha_breast, alpha_background = alpha_background)
+        self.loss_edge              = SobelLoss( mask = mask, valueMask = valueMask, versionMask = versionMask)
         self.lambda_pixel           = lambda_pixel
         self.lambda_edge            = lambda_edge
 
     def forward(self, fake_out, real_out):
 
-        self.weightedSummLoss            = self.loss_pixel( fake_out, real_out)
-        self.edgeSobelLoss               = self.loss_edge( fake_out, real_out)
-        self.weightedSumEdgeSobelLoss    = (self.lambda_pixel * self.weightedSummLoss) + (self.lambda_edge * self.edgeSobelLoss)
+        self.weightedSum                    = self.loss_weighted_sum( fake_out, real_out)
+        self.edgeSobel                      = self.loss_edge( fake_out, real_out)
+        self.weightedSumEdgeSobelLossTotal  = (self.lambda_pixel * self.weightedSum) + (self.lambda_edge * self.edgeSobel)
+
+        self.weightedSummLossTotal          = self.lambda_pixel * self.weightedSum
+        self.edgeSobelLossTotal             = self.lambda_edge * self.edgeSobel
         
-        return self.weightedSumEdgeSobelLoss
+        return self.weightedSumEdgeSobelLossTotal
 
 
 
@@ -153,7 +174,7 @@ class MAELoss(nn.Module):
 
     def forward(self, fake_out, real_out):
 
-        self.maeLoss    = self.loss_pixel( fake_out, real_out)
-        mae_pixel_loss  = self.gamma_loss * self.maeLoss
+        self.pixel_loss = self.loss_pixel( fake_out, real_out)
+        self.total_loss = self.gamma_loss * self.pixel_loss
         
-        return mae_pixel_loss
+        return self.total_loss
